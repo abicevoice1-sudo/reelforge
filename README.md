@@ -27,9 +27,25 @@ reelforge agent "make a 30s reel about hyderabadi biryani and post it Friday at 
 
 ## 🎬 Demo
 
-*Made end-to-end by ReelForge — Gemini script, Piper neural voice, CLIP-verified Pixabay footage, karaoke captions, ducked music bed.*
+*Made end-to-end by ReelForge — no hand-picked clips, no human editing. LLM script, neural voice, CLIP-verified stock footage, karaoke captions, ducked music bed.*
 
-<video src="demo/biryani-v3.mp4" width="270" controls></video>
+**"How Goats Made You Addicted to Coffee"** — 49s, 1080×1920, made from one prompt:
+
+<video src="demo/coffee-v1.mp4" width="270" controls poster="demo/coffee-poster.jpg"></video>
+
+The same video, re-voiced by `reelforge dub` — [Español](demo/coffee-v1-es.mp4) · [اردو](demo/coffee-v1-ur.mp4). One project, every audience.
+
+### 🖥️ ReelForge Studio
+
+`reelforge serve` — generate, browse trends, publish, and track stats from the browser:
+
+| Studio | Library |
+|---|---|
+| ![Studio tab](demo/screenshots/studio.png) | ![Library tab](demo/screenshots/library.png) |
+| Trends | Stats |
+| ![Trends tab](demo/screenshots/trends.png) | ![Stats tab](demo/screenshots/stats.png) |
+
+*Earlier demo: [Hyderabadi biryani](demo/biryani-v3.mp4) — the one that taught the pipeline to see.*
 
 ## Why ReelForge
 
