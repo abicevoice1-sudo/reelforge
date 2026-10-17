@@ -8,7 +8,7 @@ Post as a thread, one tweet per numbered item. Attach the demo video to tweet 1.
 
 Every text-to-video tool assembles clips blindly — that's the "stock-footage look."
 
-ReelForge visually inspects every clip with a local CLIP model before it ships. Wrong footage gets rejected automatically.
+ReelForge inspects every clip with a local CLIP model before it ships. Wrong footage gets rejected automatically.
 
 Prompt in, viral short out. 🧵
 
@@ -43,7 +43,7 @@ Bad clip → rejected → next candidate. Automatically.
 
 No fake engagement. No bots. The capability isn't in the codebase — by design.
 
-**7/** MIT licensed. 32 tests passing. Demo video in the README was made by the tool itself.
+**7/** MIT licensed. 37 tests passing. Demo video in the README was made by the tool itself.
 
 https://github.com/abicevoice1-sudo/reelforge
 
