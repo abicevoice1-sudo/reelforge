@@ -4,6 +4,9 @@ Provider pick (`llm_provider` in config, default "auto"):
   nvidia   — NVIDIA NIM at integrate.api.nvidia.com/v1 (OpenAI-compatible).
              Free tier, no credit card, ~40 RPM. Already Syed's production LLM.
   gemini   — Google AI Studio free tier.
+  openai   — any OpenAI-compatible endpoint via openai_base_url/openai_model:
+             OpenRouter, DeepSeek, Together, or local Ollama
+             (http://localhost:11434/v1, free, no key).
   template — offline fallback, no LLM at all.
 
 Used for: script/edit-plan JSON (script.py), comment drafts (engage.py),
@@ -130,6 +133,8 @@ def provider(cfg: Config | None = None) -> str:
         return "gemini"
     if _GEMINI_HELPER.exists() and _gemini_connector_available():
         return "gemini"
+    if cfg.secret("OPENAI_API_KEY") or cfg.get("openai_base_url"):
+        return "openai"
     return "template"
 
 
@@ -272,6 +277,32 @@ def _gemini(system: str | None, user: str, cfg: Config,
     return content
 
 
+def _openai(system: str | None, user: str, cfg: Config,
+            temperature: float, json_mode: bool) -> str:
+    """Generic OpenAI-compatible chat endpoint.
+
+    One provider unlocks many: set openai_base_url to use OpenRouter,
+    DeepSeek, Together, or a local Ollama (http://localhost:11434/v1 —
+    free, no key needed beyond the URL).
+    """
+    base = (cfg.get("openai_base_url") or "https://api.openai.com/v1").rstrip("/")
+    model = cfg.get("openai_model") or "gpt-4o-mini"
+    key = cfg.secret("OPENAI_API_KEY") or "not-needed"  # Ollama ignores it
+    body: dict = {
+        "model": model,
+        "messages": ([{"role": "system", "content": system}] if system else [])
+                    + [{"role": "user", "content": user}],
+        "temperature": temperature,
+    }
+    if json_mode:
+        body["response_format"] = {"type": "json_object"}
+    r = httpx.post(f"{base}/chat/completions",
+                   headers={"Authorization": f"Bearer {key}"},
+                   json=body, timeout=120)
+    r.raise_for_status()
+    return r.json()["choices"][0]["message"]["content"]
+
+
 def _call(system: str | None, user: str, cfg: Config,
          temperature: float, json_mode: bool) -> str:
     p = provider(cfg)
@@ -279,6 +310,8 @@ def _call(system: str | None, user: str, cfg: Config,
         return _nvidia(system, user, cfg, temperature, json_mode)
     if p == "gemini":
         return _gemini(system, user, cfg, temperature, json_mode)
+    if p == "openai":
+        return _openai(system, user, cfg, temperature, json_mode)
     raise RuntimeError("No LLM configured (set NVIDIA_API_KEY or GEMINI_API_KEY).")
 
 

@@ -31,7 +31,13 @@ async def _edge_tts(text: str, out: Path, voice: str, rate: str) -> None:
 
 
 def synthesize_scene(text: str, out: Path, cfg: Config | None = None) -> Path:
-    """Synthesize one narration file. Returns the path written."""
+    """Synthesize one narration file. Returns the path written.
+
+    Chain: Edge-TTS (best quality, needs network) → Piper (offline neural,
+    needs a local .onnx voice) → gTTS (last resort, robotic). The chain
+    exists because a silent or robot-voiced video is worse than a slightly
+    slower render — but gTTS is never the first choice.
+    """
     cfg = cfg or Config()
     voice = cfg.get("voice")
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -53,8 +59,13 @@ def synthesize_scene(text: str, out: Path, cfg: Config | None = None) -> Path:
             "edge-tts is not installed. Run: pip install 'reelforge[voice]'."
         ) from exc
     except Exception:
-        # Edge-TTS unreachable (restricted networks, etc.) → gTTS fallback.
-        _gtts_fallback(text, out, voice)
+        # Edge-TTS unreachable (restricted networks, etc.) → Piper neural
+        # offline voice if configured, else gTTS fallback.
+        piper_model = cfg.get("piper_voice") or ""
+        if piper_model and Path(piper_model).expanduser().exists():
+            _piper_tts(text, out, piper_model)
+        else:
+            _gtts_fallback(text, out, voice)
     if not out.exists() or out.stat().st_size == 0:
         raise RuntimeError(f"No TTS engine produced audio for: {text[:60]!r}")
     return out
@@ -75,11 +86,22 @@ def _gtts_fallback(text: str, out: Path, voice: str) -> None:
 
 
 def _piper_tts(text: str, out: Path, model: str) -> None:
-    """Offline synthesis via a local Piper model."""
+    """Offline synthesis via a local Piper model.
+
+    Uses the piper-tts Python package (``python -m piper``); falls back to a
+    `piper` binary on PATH if the module is missing.
+    """
+    import sys as _sys
+
     wav = out.with_suffix(".wav")
+    try:
+        import piper  # noqa: F401 — proves the module is installed
+        cmd = [_sys.executable, "-m", "piper"]
+    except ImportError:
+        cmd = ["piper"]
     proc = subprocess.run(
-        ["piper", "--model", model, "--output_file", str(wav)],
-        input=text.encode(), capture_output=True,
+        cmd + ["--model", model, "--output_file", str(wav)],
+        input=text.encode(), capture_output=True, timeout=120,
     )
     if proc.returncode != 0:
         raise RuntimeError(f"Piper failed: {proc.stderr.decode()[:300]}")

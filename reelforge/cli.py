@@ -77,6 +77,13 @@ def new(topic: str, duration: int = typer.Option(30, help="Target seconds (5-180
 
 
 @app.command()
+def resume(slug: str):
+    """Resume a project that failed partway — only missing stages re-run."""
+    cfg = _cfg()
+    pipeline.resume_project(slug, cfg)
+
+
+@app.command()
 def publish(slug: str,
             platforms: str = typer.Option("youtube,tiktok,instagram,x",
                                           help="Comma-separated"),
@@ -220,6 +227,55 @@ def list_projects():
         icon = "🎬" if p["has_video"] else "📝"
         size = f"  {p['size'] // 1024}KB" if p["has_video"] else ""
         console.print(f"{icon} {p['slug']}{size}")
+
+
+@app.command()
+def trends(niche: str = typer.Argument("general", help="Topic niche"),
+           limit: int = typer.Option(10, help="How many trends to show")):
+    """Show what's trending right now in a niche (free, no API keys)."""
+    from . import trends as tmod
+    console.print(f"[bold]Trending in {niche}:[/bold]")
+    results = tmod.harvest(niche, limit)
+    if not results:
+        console.print("[yellow]No trends found — check your connection.[/yellow]")
+        return
+    for i, t in enumerate(results, 1):
+        console.print(f"  {i}. [cyan]{t.title}[/cyan]")
+        console.print(f"     [dim]{t.source} · score {t.score}[/dim]")
+
+
+@app.command()
+def batch(niche: str = typer.Argument(..., help="Niche to harvest trends from"),
+          count: int = typer.Option(3, help="Videos to produce"),
+          duration: int = typer.Option(30, help="Seconds per video"),
+          topics: str = typer.Option("", help="Comma-separated topics (skips trend harvest)")):
+    """Produce a batch of videos: harvest trends, then render one video each."""
+    from . import trends as tmod
+    cfg = _cfg()
+    if topics:
+        prompts = [p.strip() for p in topics.split(",") if p.strip()]
+    else:
+        console.print(f"[bold]Harvesting trends in {niche}…[/bold]")
+        harvested = tmod.harvest(niche, count)
+        if not harvested:
+            console.print("[red]No trends found — pass --topics instead.[/red]")
+            raise typer.Exit(1)
+        prompts = [tmod.to_video_prompt(t, niche) for t in harvested]
+        for p in prompts:
+            console.print(f"  • {p}")
+    done, failed = [], []
+    for i, prompt in enumerate(prompts, 1):
+        console.print(f"\n[bold][{i}/{len(prompts)}] {prompt}[/bold]")
+        try:
+            workdir = pipeline.create_project(prompt, duration, cfg)
+            done.append(workdir.name)
+            console.print(f"[green]✓[/green] {workdir.name}")
+        except Exception as e:
+            failed.append((prompt, str(e)))
+            console.print(f"[red]✗[/red] {prompt}: {e}")
+    console.print(f"\n[bold]Batch done:[/bold] {len(done)} ok, {len(failed)} failed")
+    for slug in done:
+        console.print(f"  🎬 {slug}")
 
 
 @app.command()
