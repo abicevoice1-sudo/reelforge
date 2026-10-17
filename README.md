@@ -3,10 +3,11 @@
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](tests/)
+[![CI](https://github.com/abicevoice1-sudo/reelforge/actions/workflows/ci.yml/badge.svg)](https://github.com/abicevoice1-sudo/reelforge/actions)
 
 **Prompt in. Viral short out.**
 
-ReelForge is an AI video studio that takes one sentence — or today's trends — and ships a finished, captioned 9:16 short, then publishes it to YouTube, TikTok, Instagram, Threads, Bluesky and X through their **official APIs**. Script, voiceover, *verified* stock footage, karaoke captions, music ducking, trend harvesting, batch production, scheduling and comment-reply drafts, all in one CLI. And an MCP server, so AI agents can drive the whole factory.
+ReelForge is an AI video studio that takes one sentence — or today's trends — and ships a finished, captioned 9:16 short, then publishes it to YouTube, TikTok, Instagram, Threads, Bluesky, LinkedIn, Pinterest and X through their **official APIs**. Script, voiceover, *verified* stock footage, karaoke captions, music ducking, trend harvesting, batch production, scheduling and comment-reply drafts, all in one CLI. And an MCP server, so AI agents can drive the whole factory.
 
 ```bash
 reelforge trends food                    # what's hot right now (free, no keys)
@@ -55,7 +56,9 @@ prompt ──▶ script ──▶ voice ──▶ visuals ──▶ captions ─
 - **Visuals** — free Pixabay footage, every clip verified by the vision gate. Prefer AI generation? Set `visual_provider: custom` with your own command (ComfyUI, Replicate, MiniMax…) — the gate still checks the result.
 - **Captions** — faster-whisper word timestamps → burned-in **karaoke captions**.
 - **Render** — FFmpeg: 9:16 smart reframe, transitions, hook + CTA overlays, ducked music, H.264/AAC faststart.
-- **Publish** — YouTube Data API v3, TikTok Content Posting API, Instagram Graph API, Threads API, Bluesky ATProto, X API v2. Official APIs only — no Selenium, no scraping, nothing that gets accounts banned.
+- **Publish** — YouTube, TikTok, Instagram, Threads, Bluesky, LinkedIn, Pinterest, X. Official APIs only — no Selenium, no scraping, nothing that gets accounts banned.
+- **Dub** — `reelforge dub <slug> --lang ur` re-voices any video in Urdu, Hindi, Arabic, Spanish, French, German or Portuguese. Same verified clips, new native narration.
+- **Analytics** — `reelforge analytics` pulls real views/likes/comments from YouTube's API. Numbers from the platform, not vanity metrics.
 - **Trends** — `reelforge trends <niche>` harvests Google News + Hacker News (free, no keys). `reelforge batch` turns the top trends into videos unattended.
 - **Schedule** — natural language ("Friday 6pm"), durable SQLite queue, retrying worker.
 - **Engage** — pulls recent comments, drafts warm replies, **you approve each one with a tap**. Nothing posts itself.
@@ -73,7 +76,9 @@ prompt ──▶ script ──▶ voice ──▶ visuals ──▶ captions ─
 | Trend harvesting (free, no keys) | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Batch production | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Karaoke word-level captions | ✅ | ✅ | ✅ | ❌ | ✅ |
-| Official publishing APIs | ✅ 6 platforms | ⚠️ Selenium for YT | ✅ | ✅ | ⚠️ |
+| Official publishing APIs | ✅ 8 platforms | ⚠️ Selenium for YT | ✅ | ✅ | ⚠️ |
+| Multi-language dubbing | ✅ 7 languages | ❌ | ❌ | ❌ | ✅ |
+| Real analytics pull | ✅ | ❌ | ❌ | ✅ | ❌ |
 | Web UI | ✅ Studio | ✅ | ✅ | ✅ | ✅ |
 | MCP server | ✅ | ❌ | ✅ | ✅ | ❌ |
 | Comment-reply drafts (human-approved) | ✅ | ❌ | ❌ | ❌ | ❌ |

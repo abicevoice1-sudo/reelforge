@@ -20,7 +20,14 @@ SAMPLE_VOICES = {
     "ur": ["ur-PK-AsadNeural", "ur-IN-GulNeural"],
     "hi": ["hi-IN-SwaraNeural", "hi-IN-MadhurNeural"],
     "ar": ["ar-SA-ZariyahNeural", "ar-EG-SalmaNeural"],
+    "es": ["es-ES-ElviraNeural", "es-MX-DaliaNeural"],
+    "fr": ["fr-FR-DeniseNeural", "fr-CA-SylvieNeural"],
+    "de": ["de-DE-KatjaNeural", "de-DE-ConradNeural"],
+    "pt": ["pt-BR-FranciscaNeural", "pt-PT-RaquelNeural"],
 }
+
+DUB_LANGUAGES = {"ur": "Urdu", "hi": "Hindi", "ar": "Arabic", "es": "Spanish",
+                 "fr": "French", "de": "German", "pt": "Portuguese"}
 
 
 async def _edge_tts(text: str, out: Path, voice: str, rate: str) -> None:

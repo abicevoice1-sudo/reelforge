@@ -9,7 +9,8 @@ from pathlib import Path
 
 from ..config import Config
 
-ADAPTERS = ("youtube", "tiktok", "instagram", "x", "threads", "bluesky")
+ADAPTERS = ("youtube", "tiktok", "instagram", "x", "threads", "bluesky",
+            "linkedin", "pinterest")
 
 
 def publish(platform: str, video: Path, title: str, description: str,
@@ -28,6 +29,10 @@ def publish(platform: str, video: Path, title: str, description: str,
         from .threads import publish as fn
     elif platform == "bluesky":
         from .bluesky import publish as fn
+    elif platform == "linkedin":
+        from .linkedin import publish as fn
+    elif platform == "pinterest":
+        from .pinterest import publish as fn
     else:
         raise ValueError(f"Unknown platform {platform!r}. Choose from {ADAPTERS}.")
     return fn(video, title, description, hashtags, cfg, dry_run=dry_run, **kwargs)

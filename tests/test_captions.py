@@ -163,3 +163,31 @@ def test_web_api_endpoints():
     stats = c.get("/api/stats").json()
     assert stats["platforms"] and len(stats["platforms"]) >= 6
     assert c.post("/api/trends", json={"niche": "ai", "limit": 2}).status_code == 200
+
+
+def test_linkedin_pinterest_dry_run():
+    """LinkedIn + Pinterest adapters dry_run without credentials."""
+    from pathlib import Path
+    from reelforge.publish import publish, ADAPTERS
+    from reelforge.config import Config
+    assert len(ADAPTERS) == 8
+    v = Path("/tmp/fake.mp4")
+    for p in ("linkedin", "pinterest"):
+        r = publish(p, v, "T", "d", ["#t"], Config(), dry_run=True)
+        assert r["platform"] == p and r["dry_run"] is True
+
+
+def test_dub_language_map():
+    """Dubbing supports 7 languages with native neural voices."""
+    from reelforge.voice import DUB_LANGUAGES, SAMPLE_VOICES
+    assert len(DUB_LANGUAGES) == 7
+    for lang in DUB_LANGUAGES:
+        assert SAMPLE_VOICES[lang], f"no voices for {lang}"
+
+
+def test_analytics_youtube_id():
+    """YouTube video ID extraction from Shorts URLs."""
+    from reelforge.analytics import _youtube_id
+    assert _youtube_id("https://www.youtube.com/shorts/abc123") == "abc123"
+    assert _youtube_id("https://youtu.be/xyz789?t=5") == "xyz789"
+    assert _youtube_id("https://example.com") is None
