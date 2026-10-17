@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+nvidia_watch.sh
+rerender_scene.py

@@ -1,0 +1,231 @@
+"""ReelForge CLI — prompt in, viral short out."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Optional
+
+import typer
+from rich.console import Console
+from rich.table import Table
+
+from . import __version__, agent, engage, pipeline, schedule
+from .config import CONFIG_FILE, DEFAULTS, Config, ensure_home
+from .publish import ADAPTERS
+
+app = typer.Typer(help="ReelForge — prompt in, viral short out.",
+                  no_args_is_help=True)
+console = Console()
+
+
+def _cfg(**overrides) -> Config:
+    return Config({k: v for k, v in overrides.items() if v is not None})
+
+
+@app.command()
+def init():
+    """Create ~/.reelforge/config.yaml and show what's needed."""
+    ensure_home()
+    if not CONFIG_FILE.exists():
+        import yaml
+        CONFIG_FILE.write_text(yaml.safe_dump(DEFAULTS, sort_keys=False))
+    (Path.home() / ".reelforge" / "music").mkdir(exist_ok=True)
+    console.print(f"[green]✓[/green] Config at {CONFIG_FILE}")
+    console.print("Next: copy .env.example → .env and add keys (Gemini, Pexels…). "
+                  "Only Pexels/Edge-TTS/Gemini-free are needed for the basics — "
+                  "Edge-TTS needs no key at all.")
+
+
+@app.command()
+def doctor():
+    """Check every dependency and credential. Fails fast with fixes."""
+    from . import edit
+    ok = True
+
+    def check(name: str, fn):
+        nonlocal ok
+        try:
+            fn()
+            console.print(f"[green]✓[/green] {name}")
+        except Exception as e:  # noqa: BLE001
+            ok = False
+            console.print(f"[red]✗[/red] {name}: {e}")
+
+    check("ffmpeg + ffprobe + libass", edit.render_quiet_check)
+    check("Edge-TTS (voice)", lambda: __import__("edge_tts"))
+    check("faster-whisper (captions)", lambda: __import__("faster_whisper"))
+    check("google-generativeai (script/drafts)", lambda: __import__("google.generativeai"))
+    cfg = Config()
+    console.print(f"[{'green' if cfg.gemini_key() else 'yellow'}]"
+                  f"{'✓' if cfg.gemini_key() else '○'}[/] GEMINI_API_KEY "
+                  f"{'(set)' if cfg.gemini_key() else '(missing — offline template will be used)'}")
+    console.print(f"[{'green' if cfg.pexels_key() else 'yellow'}]"
+                  f"{'✓' if cfg.pexels_key() else '○'}[/] PEXELS_API_KEY "
+                  f"{'(set)' if cfg.pexels_key() else '(missing — generated placeholders will be used)'}")
+    raise typer.Exit(0 if ok else 1)
+
+
+@app.command()
+def new(topic: str, duration: int = typer.Option(30, help="Target seconds (5-180)"),
+        voice: Optional[str] = typer.Option(None, help="Edge-TTS voice id"),
+        style: Optional[str] = typer.Option(None, help="karaoke|minimal|bold")):
+    """Create a video from a prompt: script → voice → footage → captions → render."""
+    cfg = _cfg(voice=voice, caption_style=style)
+    workdir = pipeline.create_project(topic, duration, cfg)
+    console.print(f"Project: [bold]{workdir.name}[/bold]  •  "
+                  f"Publish with: reelforge publish {workdir.name} --platforms youtube,tiktok")
+
+
+@app.command()
+def publish(slug: str,
+            platforms: str = typer.Option("youtube,tiktok,instagram,x",
+                                          help="Comma-separated"),
+            dry_run: bool = typer.Option(False, help="Don't actually upload"),
+            video_url: Optional[str] = typer.Option(None, help="Public MP4 URL (Instagram)")):
+    """Upload a finished project via official platform APIs."""
+    plats = [p.strip() for p in platforms.split(",") if p.strip()]
+    bad = [p for p in plats if p not in ADAPTERS]
+    if bad:
+        raise typer.BadParameter(f"Unknown platforms: {bad}. Choose from {ADAPTERS}.")
+    kw = {"video_url": video_url} if video_url else {}
+    pipeline.publish_project(slug, plats, dry_run=dry_run, **kw)
+
+
+@app.command()
+def schedule(topic: str,
+             at: str = typer.Option(..., help='When, e.g. "Friday 6pm"'),
+             duration: int = typer.Option(30),
+             platforms: str = typer.Option("youtube,tiktok,instagram,x")):
+    """Render now, publish later. The video is built immediately; the upload
+    is queued for the time you name (timezone-aware)."""
+    cfg = Config()
+    workdir = pipeline.create_project(topic, duration, cfg)
+    run_at = schedule.parse_when(at, cfg.get("timezone"))
+    plats = [p.strip() for p in platforms.split(",")]
+    job_id = schedule.enqueue(run_at, "publish",
+                              {"slug": workdir.name, "platforms": plats})
+    console.print(f"[green]✓[/green] Queued publish of [bold]{workdir.name}[/bold] "
+                  f"→ {', '.join(plats)} at {run_at:%A %Y-%m-%d %H:%M %Z} "
+                  f"(job #{job_id}). Run [bold]reelforge worker[/bold] to process the queue.")
+
+
+@app.command()
+def queue(state: Optional[str] = typer.Option(None, help="queued|done|failed")):
+    """Show the publish queue."""
+    jobs = schedule.list_jobs(state)
+    table = Table("id", "run at", "kind", "state", "tries", "detail")
+    for j in jobs:
+        table.add_row(str(j["id"]), j["run_at"][:16], j["kind"], j["state"],
+                      str(j["attempts"]), (j["last_error"] or j["payload"])[:60])
+    console.print(table)
+
+
+@app.command()
+def cancel(job_id: int):
+    """Cancel a queued job."""
+    if schedule.cancel(job_id):
+        console.print(f"[green]✓[/green] Job {job_id} cancelled.")
+    else:
+        console.print(f"[yellow]![/yellow] Job {job_id} not found or already ran.")
+
+
+@app.command()
+def worker(once: bool = typer.Option(False, help="Process due jobs and exit")):
+    """Run the publish queue (polls every 30s)."""
+    console.print("Worker running — Ctrl+C to stop." if not once else "Processing due jobs…")
+    schedule.run_worker(once=once)
+
+
+@app.command(name="engage")
+def engage_cmd(platform: str = typer.Option("youtube",
+                                             help="youtube|tiktok|instagram|x")):
+    """Pull recent comments, draft replies, approve each with one tap."""
+    cfg = Config()
+    if platform not in engage.FETCHERS:
+        raise typer.BadParameter(f"Choose from {list(engage.FETCHERS)}.")
+    comments = engage.FETCHERS[platform](cfg)
+    if not comments:
+        console.print("No recent comments found.")
+        return
+    posted = 0
+    for c in comments[:20]:
+        console.print(f"\n[bold]@{c.author}[/bold] on [dim]{c.video_title[:60]}[/dim]")
+        console.print(f"  {c.text[:200]}")
+        draft = engage.draft_reply(c, cfg)
+        if draft.strip() == "SKIP":
+            console.print("  [dim]skipped (spam/hate)[/dim]")
+            continue
+        console.print(f"  [cyan]Draft:[/cyan] {draft}")
+        choice = typer.prompt("  [a]pprove / [e]dit / [s]kip", default="s")
+        if choice == "a":
+            engage.post_reply(c, draft, cfg)
+            posted += 1
+        elif choice == "e":
+            edited = typer.prompt("  Your reply", default=draft)
+            engage.post_reply(c, edited, cfg)
+            posted += 1
+    console.print(f"\n[green]✓[/green] Posted {posted} replies. Nothing else went out.")
+
+
+@app.command(name="agent")
+def agent_cmd(request: str = typer.Argument(..., help='e.g. "make a 30s reel about X, post Friday 6pm"')):
+    """Natural-language control: describe what you want, confirm the plan."""
+    cfg = Config()
+    job = agent.parse_request(request, cfg)
+    console.print(f"\n[bold]Plan:[/bold] {agent.describe(job)}")
+    if not typer.confirm("Run it?", default=True):
+        console.print("Cancelled — nothing was created.")
+        return
+    if job.action == "status":
+        queue()
+        for p in pipeline.list_projects()[:10]:
+            console.print(f"  {p['slug']}  video={'✓' if p['has_video'] else '—'}")
+    elif job.action == "engage":
+        engage_cmd(job.platforms[0] if job.platforms else "youtube")
+    elif job.action in ("create", "schedule", "publish"):
+        if job.action == "publish" and not job.project_slug and not job.topic:
+            console.print("[red]Which project?[/red] Name it: --slug or describe the topic.")
+            return
+        if job.action == "publish":
+            slug = job.project_slug or _pick_project(job.topic)
+            pipeline.publish_project(slug, job.platforms)
+        else:
+            workdir = pipeline.create_project(job.topic or "untitled", job.duration, cfg)
+            if job.schedule_at:
+                from datetime import datetime
+                run_at = datetime.fromisoformat(job.schedule_at)
+                jid = schedule.enqueue(run_at, "publish",
+                                       {"slug": workdir.name, "platforms": job.platforms})
+                console.print(f"[green]✓[/green] Publish queued (job #{jid}) for {run_at}.")
+            else:
+                pipeline.publish_project(workdir.name, job.platforms)
+    console.print("[green]✓ Done.[/green]")
+
+
+def _pick_project(topic: str) -> str:
+    projects = pipeline.list_projects()
+    if not projects:
+        raise typer.BadParameter("No projects yet — create one first.")
+    if topic:
+        hits = [p for p in projects if topic.lower() in p["slug"].lower()]
+        if hits:
+            return hits[0]["slug"]
+    return projects[0]["slug"]
+
+
+@app.command(name="list")
+def list_projects():
+    """Show projects and their render state."""
+    for p in pipeline.list_projects():
+        icon = "🎬" if p["has_video"] else "📝"
+        size = f"  {p['size'] // 1024}KB" if p["has_video"] else ""
+        console.print(f"{icon} {p['slug']}{size}")
+
+
+@app.command()
+def version():
+    console.print(f"ReelForge {__version__}")
+
+
+if __name__ == "__main__":
+    app()
