@@ -138,3 +138,28 @@ def test_visual_provider_routing():
     import pytest as _pt
     with _pt.raises(RuntimeError, match="visual_command"):
         visual.fetch("test", __import__("pathlib").Path("/tmp/x.mp4"), cfg)
+
+
+def test_new_publishers_dry_run():
+    """Threads + Bluesky adapters support dry_run without credentials."""
+    from pathlib import Path
+    from reelforge.publish import publish, ADAPTERS
+    from reelforge.config import Config
+    assert "threads" in ADAPTERS and "bluesky" in ADAPTERS
+    v = Path("/tmp/fake.mp4")
+    v.write_bytes(b"x" * 100)
+    for p in ("threads", "bluesky"):
+        r = publish(p, v, "T", "d", ["#t"], Config(), dry_run=True)
+        assert r["platform"] == p and r["dry_run"] is True
+
+
+def test_web_api_endpoints():
+    """Studio web UI: index, projects, stats, trends all respond."""
+    from fastapi.testclient import TestClient
+    from reelforge.web import app
+    c = TestClient(app)
+    assert c.get("/").status_code == 200
+    assert c.get("/api/projects").status_code == 200
+    stats = c.get("/api/stats").json()
+    assert stats["platforms"] and len(stats["platforms"]) >= 6
+    assert c.post("/api/trends", json={"niche": "ai", "limit": 2}).status_code == 200
