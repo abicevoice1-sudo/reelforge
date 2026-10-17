@@ -23,7 +23,7 @@ AI, Open Source, Video, Developer Tools, Social Media
 ## Assets checklist
 - [ ] Logo: reuse the ⚒️ hammer emoji as the thumbnail (or export the README header)
 - [ ] Gallery: 3 frames — (1) the burger fail, (2) the CLIP gate rejecting it, (3) the fixed video
-- [ ] Demo video: demo/biryani-v3.mp4 (35s, captioned, silent-autoplay friendly)
+- [ ] Demo video: demo/coffee-v1.mp4 (49s, captioned, silent-autoplay friendly)
 - [ ] Link: https://github.com/abicevoice1-sudo/reelforge
 
 ## Timing

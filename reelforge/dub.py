@@ -20,11 +20,20 @@ from .pipeline import _finish_project, load_plan, project_dir
 def translate(text: str, lang: str, cfg: Config) -> str:
     from . import llm
     lang_name = voice.DUB_LANGUAGES.get(lang, lang)
-    return llm.chat_text(
-        f"You translate short video narrations into {lang_name}. "
-        "Keep it punchy, conversational, same length as the original. "
-        "Return ONLY the translation, no quotes or explanations.",
-        text, cfg, temperature=0.3)
+    last_err: Exception | None = None
+    for attempt in range(3):
+        try:
+            return llm.chat_text(
+                f"You translate short video narrations into {lang_name}. "
+                "Keep it punchy, conversational, same length as the original. "
+                "Return ONLY the translation, no quotes or explanations.",
+                text, cfg, temperature=0.3)
+        except Exception as e:  # noqa: BLE001 — LLM APIs are flaky; retry
+            last_err = e
+            print(f"translate: attempt {attempt + 1}/3 failed ({e}); retrying…")
+            import time
+            time.sleep(5 * (attempt + 1))
+    raise RuntimeError(f"Translation failed after 3 attempts: {last_err}")
 
 
 def dub_project(slug: str, lang: str, cfg: Config | None = None) -> Path:
@@ -46,14 +55,21 @@ def dub_project(slug: str, lang: str, cfg: Config | None = None) -> Path:
 
     dub_voice = voice.SAMPLE_VOICES[lang][0]
     dub_cfg = Config(overrides={**cfg._data, "voice": dub_voice})
-    new_scenes = []
-    audio_paths = []
-    for scene in plan.scenes:
+
+    # Scenes are independent: translate + synthesize in parallel.
+    # Sequential was 9 × ~45s; parallel is ~1 minute total.
+    def _dub_scene(scene):
         translated = translate(scene.voiceover, lang, cfg)
         out = workdir / "audio" / f"scene_{scene.id:02d}.mp3"
         voice.synthesize_scene(translated, out, dub_cfg)
-        audio_paths.append(out)
-        new_scenes.append(scene.model_copy(update={"voiceover": translated}))
+        return scene.model_copy(update={"voiceover": translated}), out
+
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=4) as ex:
+        # map preserves scene order
+        dubbed = list(ex.map(_dub_scene, plan.scenes))
+    new_scenes = [s for s, _ in dubbed]
+    audio_paths = [p for _, p in dubbed]
     dub_plan = plan.model_copy(update={"scenes": new_scenes,
                                        "title": f"{plan.title} ({voice.DUB_LANGUAGES[lang]})"})
     (workdir / "plan.json").write_text(dub_plan.model_dump_json(indent=2))
