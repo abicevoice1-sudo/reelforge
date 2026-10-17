@@ -33,6 +33,9 @@ schedule = ["apscheduler>=3.10"]
 trends = ["pytrends>=4.9"]
 vision = ["torch", "transformers", "pillow"]
 mcp = ["mcp<2"]
+web = ["fastapi>=0.100", "uvicorn>=0.20"]
+bluesky = ["httpx>=0.25"]
+threads = ["httpx>=0.25"]
 
 [project.scripts]
 reelforge = "reelforge.cli:app"

@@ -6,13 +6,23 @@
 
 **Prompt in. Viral short out.**
 
-ReelForge is an AI video studio that takes one sentence — or today's trends — and ships a finished, captioned 9:16 short, then publishes it to YouTube, TikTok, Instagram and X through their **official APIs**. Script, voiceover, *verified* stock footage, karaoke captions, music ducking, trend harvesting, batch production, scheduling and comment-reply drafts, all in one CLI. And an MCP server, so AI agents can drive the whole factory.
+ReelForge is an AI video studio that takes one sentence — or today's trends — and ships a finished, captioned 9:16 short, then publishes it to YouTube, TikTok, Instagram, Threads, Bluesky and X through their **official APIs**. Script, voiceover, *verified* stock footage, karaoke captions, music ducking, trend harvesting, batch production, scheduling and comment-reply drafts, all in one CLI. And an MCP server, so AI agents can drive the whole factory.
 
 ```bash
 reelforge trends food                    # what's hot right now (free, no keys)
 reelforge batch food --count 5           # turn the top 5 trends into 5 videos
+reelforge serve                          # 🆕 web studio: http://localhost:8000
 reelforge agent "make a 30s reel about hyderabadi biryani and post it Friday at 6pm"
 ```
+
+## 🖥️ ReelForge Studio (web UI)
+
+`reelforge serve` launches a dark, fast studio in your browser — no build step:
+
+- **🎬 Studio tab** — type a topic, hit Forge, watch it build; video previews inline
+- **📈 Trends tab** — browse what's hot per niche, click any trend to use it as your topic
+- **📚 Library tab** — every project, video preview, one-click publish
+- **📊 Stats tab** — your output at a glance
 
 ## 🎬 Demo
 
@@ -45,7 +55,7 @@ prompt ──▶ script ──▶ voice ──▶ visuals ──▶ captions ─
 - **Visuals** — free Pixabay footage, every clip verified by the vision gate. Prefer AI generation? Set `visual_provider: custom` with your own command (ComfyUI, Replicate, MiniMax…) — the gate still checks the result.
 - **Captions** — faster-whisper word timestamps → burned-in **karaoke captions**.
 - **Render** — FFmpeg: 9:16 smart reframe, transitions, hook + CTA overlays, ducked music, H.264/AAC faststart.
-- **Publish** — YouTube Data API v3, TikTok Content Posting API, Instagram Graph API, X API v2. Official APIs only — no Selenium, no scraping, nothing that gets accounts banned.
+- **Publish** — YouTube Data API v3, TikTok Content Posting API, Instagram Graph API, Threads API, Bluesky ATProto, X API v2. Official APIs only — no Selenium, no scraping, nothing that gets accounts banned.
 - **Trends** — `reelforge trends <niche>` harvests Google News + Hacker News (free, no keys). `reelforge batch` turns the top trends into videos unattended.
 - **Schedule** — natural language ("Friday 6pm"), durable SQLite queue, retrying worker.
 - **Engage** — pulls recent comments, drafts warm replies, **you approve each one with a tap**. Nothing posts itself.
@@ -63,7 +73,8 @@ prompt ──▶ script ──▶ voice ──▶ visuals ──▶ captions ─
 | Trend harvesting (free, no keys) | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Batch production | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Karaoke word-level captions | ✅ | ✅ | ✅ | ❌ | ✅ |
-| Official publishing APIs | ✅ | ⚠️ Selenium for YT | ✅ | ✅ | ⚠️ |
+| Official publishing APIs | ✅ 6 platforms | ⚠️ Selenium for YT | ✅ | ✅ | ⚠️ |
+| Web UI | ✅ Studio | ✅ | ✅ | ✅ | ✅ |
 | MCP server | ✅ | ❌ | ✅ | ✅ | ❌ |
 | Comment-reply drafts (human-approved) | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Resume failed projects | ✅ | ❌ | n/a | n/a | ❌ |

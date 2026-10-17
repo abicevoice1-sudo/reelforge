@@ -279,6 +279,15 @@ def batch(niche: str = typer.Argument(..., help="Niche to harvest trends from"),
 
 
 @app.command()
+def serve(host: str = typer.Option("127.0.0.1", help="Bind address"),
+          port: int = typer.Option(8000, help="Port")):
+    """Launch ReelForge Studio — the web UI."""
+    from .web import main as serve_main
+    console.print(f"[bold]ReelForge Studio:[/bold] http://{host}:{port}")
+    serve_main(host, port)
+
+
+@app.command()
 def version():
     console.print(f"ReelForge {__version__}")
 
