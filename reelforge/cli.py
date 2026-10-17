@@ -288,6 +288,36 @@ def serve(host: str = typer.Option("127.0.0.1", help="Bind address"),
 
 
 @app.command()
+def analytics():
+    """Show real view/like/comment stats for published videos."""
+    from . import analytics as amod
+    rows = amod.collect()
+    if not rows:
+        console.print("[yellow]No published videos found.[/yellow]")
+        return
+    total_views = sum(r.views for r in rows)
+    console.print(f"[bold]{len(rows)} published videos · "
+                  f"{total_views:,} total views[/bold]\n")
+    for r in rows:
+        console.print(f"  [cyan]{r.slug[:40]}[/cyan] [{r.platform}]")
+        if r.views or r.likes or r.comments:
+            console.print(f"    👁 {r.views:,}  ♥ {r.likes:,}  💬 {r.comments:,}")
+        console.print(f"    [dim]{r.url}[/dim]")
+
+
+@app.command()
+def dub(slug: str, lang: str = typer.Option(..., help="ur|hi|ar|es|fr|de|pt")):
+    """Re-voice a project in another language (same clips, new narration)."""
+    from . import dub as dub_mod
+    from .voice import DUB_LANGUAGES
+    if lang not in DUB_LANGUAGES:
+        console.print(f"[red]Choose from: {', '.join(DUB_LANGUAGES)}[/red]")
+        raise typer.Exit(1)
+    final = dub_mod.dub_project(slug, lang, _cfg())
+    console.print(f"[green]✓ Dubbed ({DUB_LANGUAGES[lang]}):[/green] {final}")
+
+
+@app.command()
 def version():
     console.print(f"ReelForge {__version__}")
 
