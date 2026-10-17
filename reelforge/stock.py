@@ -56,59 +56,103 @@ def _rank_hits(hits: list[dict], query: str, seed: int | None = None) -> list[di
     return [h for _, _, h in scored]
 
 
-def _frame_b64(clip: Path) -> str | None:
-    """Middle frame of `clip` as base64 JPEG, or None on failure."""
+def _frame_path(clip: Path) -> Path | None:
+    """Middle frame of `clip` as a temp JPEG path, or None on failure."""
     try:
         dur = subprocess.run(
             ["ffprobe", "-v", "error", "-show_entries", "format=duration",
              "-of", "default=noprint_wrappers=1:nokey=1", str(clip)],
             capture_output=True, text=True, timeout=30)
         mid = max(0.5, float(dur.stdout.strip() or 0) / 2)
-        with tempfile.NamedTemporaryFile(suffix=".jpg") as tmp:
-            subprocess.run(
-                ["ffmpeg", "-v", "error", "-ss", str(mid), "-i", str(clip),
-                 "-frames:v", "1", "-q:v", "5", tmp.name, "-y"],
-                check=True, timeout=60)
-            return base64.b64encode(Path(tmp.name).read_bytes()).decode()
+        tmp = Path(tempfile.mkstemp(suffix=".jpg")[1])
+        subprocess.run(
+            ["ffmpeg", "-v", "error", "-ss", str(mid), "-i", str(clip),
+             "-frames:v", "1", "-q:v", "5", str(tmp), "-y"],
+            check=True, timeout=60)
+        return tmp
     except Exception:
         return None
 
 
+def _frame_b64(clip: Path) -> str | None:
+    """Middle frame of `clip` as base64 JPEG, or None on failure."""
+    p = _frame_path(clip)
+    if not p:
+        return None
+    try:
+        return base64.b64encode(p.read_bytes()).decode()
+    finally:
+        p.unlink(missing_ok=True)
+
+
 def _vision_relevant(clip: Path, query: str, context: str | None,
                      cfg: Config) -> bool:
-    """Ask Gemini whether the clip's middle frame matches the query.
+    """Two-stage visual relevance gate on the clip's middle frame.
 
-    Second line of defense after tag ranking. Returns True when Gemini is
-    unreachable so a vision outage degrades to tag-ranking instead of
-    blocking the render — but logs it loudly.
+    Stage 1 (always on): local CLIP zero-shot — offline, no quota, catches
+    obvious mismatches (wrong cuisine, plants, animals, objects).
+    Stage 2 (when available): Gemini — nuanced check against the narration.
+    Both must pass. Either stage degrades to pass-through (loudly) on
+    technical failure, never on a negative verdict.
     """
     if not cfg.get("stock_verify", True):
         return True
-    if not _GEMINI_HELPER.exists():
-        return True
-    frame = _frame_b64(clip)
+    frame = _frame_path(clip)
     if not frame:
         print("stock: frame extract failed, skipping vision check",
               file=sys.stderr)
         return True
+    try:
+        # Stage 1: local CLIP.
+        try:
+            from . import vision_local
+            ok, label, score = vision_local.relevant(frame, query)
+            if not ok:
+                print(f"stock: local vision rejects ({label} {score:.2f})",
+                      file=sys.stderr)
+                return False
+        except ImportError:
+            print("stock: vision_local unavailable, skipping local check",
+                  file=sys.stderr)
+        except Exception as exc:  # noqa: BLE001 — degrade, don't block
+            print(f"stock: local vision failed ({exc}), continuing",
+                  file=sys.stderr)
+
+        # Stage 2: Gemini (quota permitting).
+        if not _GEMINI_HELPER.exists():
+            return True
+        frame_b64 = base64.b64encode(frame.read_bytes()).decode()
+    finally:
+        frame.unlink(missing_ok=True)
+
     prompt = (
         "You're checking stock footage for a cooking video. "
         f"This scene needs footage of: '{query}'. "
         + (f"The narration at this moment says: {context!r}. " if context else "")
-        + "Does this frame plausibly fit — could it illustrate this moment? "
-          "Answer YES unless the frame clearly shows something unrelated "
-          "(wrong dish, wrong subject, or no food at all). "
+        + "Rules: If the narration names a specific dish or ingredient, the "
+          "frame must show it (or its preparation) -- otherwise NO. "
+          "If the narration is about a cuisine, city, or food culture in "
+          "general, any authentic street-food or cooking scene from that "
+          "cuisine fits -- YES, even if it's a different dish. "
+          "Always NO for: a clearly different cuisine, non-food subjects, "
+          "or no food at all. "
           "Answer with only YES or NO.")
     try:
         proc = subprocess.run(
             [sys.executable, str(_GEMINI_HELPER), "generate"],
             input=json.dumps({
-                "user": prompt, "image_b64": frame,
+                "user": prompt, "image_b64": frame_b64,
                 "model": cfg.get("gemini_model") or "gemini-3.8-flash",
                 "temperature": 0.1,
             }).encode(),
             capture_output=True, timeout=90)
         data = json.loads(proc.stdout.decode() or "{}")
+        if not data.get("ok", True):
+            # API error (quota, etc.) — fail OPEN per docstring, but loudly.
+            print(f"stock: vision check unavailable "
+                  f"({(data.get('error') or '')[:120]}), trusting tag rank",
+                  file=sys.stderr)
+            return True
         answer = (data.get("content") or "").strip().upper()
         return answer.startswith("YES")
     except Exception as exc:  # noqa: BLE001 — degrade, don't block
@@ -118,6 +162,51 @@ def _vision_relevant(clip: Path, query: str, context: str | None,
 
 
 def _egress_proxy() -> str | None:
+    """Explicit proxy for httpx (works around broken no_proxy parsing)."""
+    return os.environ.get("https_proxy") or os.environ.get("HTTPS_PROXY")
+
+
+def _broaden_queries(query: str) -> list[str]:
+    """Progressively broader query variants for retry.
+
+    Stock sites rarely index landmarks or proper nouns, so when a specific
+    query like 'hyderabad charminar street food' returns nothing relevant,
+    retry as 'charminar street food', then 'street food'. Relevance is still
+    judged against the original query + narration, so broadening only widens
+    the candidate pool — it never lowers the bar.
+    """
+    words = query.split()
+    variants = []
+    for i in range(1, min(3, len(words))):
+        v = " ".join(words[i:])
+        if v and v not in variants:
+            variants.append(v)
+    return variants
+
+
+def _pixabay_try(query: str, intent: str, context: str | None,
+                 out: Path, cfg: Config, seed: int | None) -> Path | None:
+    """Try one Pixabay query string. Returns clip path or None."""
+    if cfg.pixabay_key():
+        hits = _pixabay_search(query, 5, cfg.pixabay_key())
+    elif _PIXABAY_HELPER.exists():
+        print("pixabay: using vault-connected key", file=sys.stderr)
+        hits = _pixabay_via_helper(query, 8)
+    else:
+        print("pixabay: no API key — placeholder footage", file=sys.stderr)
+        return generate_placeholder(intent, out, seed=seed)
+    for hit in _rank_hits(hits, query, seed) if hits else []:
+        url = _pixabay_best_file(hit)
+        if not url:
+            continue
+        path = _download(url, out)
+        # Judge against the ORIGINAL intent, not the broadened query.
+        if _vision_relevant(path, intent, context, cfg):
+            return path
+        print(f"pixabay: clip rejected by vision check for {intent!r} "
+              f"(tags: {(hit.get('tags') or '')[:60]}), trying next",
+              file=sys.stderr)
+    return None
     # httpx 0.28.1 cannot parse this runtime's no_proxy (bare IPv6 entries
     # become invalid "all://*[::1]" URLPatterns), so bypass env-proxy parsing
     # and hand httpx the proxy URL directly.
@@ -203,27 +292,16 @@ def fetch_stock(query: str, out: Path, cfg: Config | None = None,
         return generate_placeholder(query, out, seed=seed)
 
     if provider == "pixabay":
-        if cfg.pixabay_key():
-            hits = _pixabay_search(query, 5, cfg.pixabay_key())
-        elif _PIXABAY_HELPER.exists():
-            print("pixabay: using vault-connected key", file=sys.stderr)
-            hits = _pixabay_via_helper(query, 8)
-        else:
-            print("pixabay: no API key — placeholder footage", file=sys.stderr)
-            return generate_placeholder(query, out, seed=seed)
-        for hit in _rank_hits(hits, query, seed) if hits else []:
-            url = _pixabay_best_file(hit)
-            if not url:
-                continue
-            path = _download(url, out)
-            if _vision_relevant(path, query, context, cfg):
+        tried = [query] + _broaden_queries(query)
+        for q in tried:
+            if q != query:
+                print(f"pixabay: broadening query {query!r} → {q!r}",
+                      file=sys.stderr)
+            if path := _pixabay_try(q, query, context, out, cfg, seed):
                 return path
-            print(f"pixabay: clip rejected by vision check for {query!r} "
-                  f"(tags: {(hit.get('tags') or '')[:60]}), trying next",
-                  file=sys.stderr)
         raise RuntimeError(
             f"Pixabay: no relevant clip for {query!r} "
-            f"({len(hits)} hits, all failed relevance).")
+            f"(tried {len(tried)} query variants, all failed relevance).")
 
     if provider == "pexels" and not cfg.pexels_key():
         print("pexels: no API key — placeholder footage", file=sys.stderr)

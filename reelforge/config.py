@@ -30,6 +30,10 @@ DEFAULTS: dict[str, Any] = {
     # voice
     "voice": "en-US-AriaNeural",  # Edge-TTS voice id
     "voice_rate": "+0%",
+    # Offline neural fallback when Edge-TTS is unreachable (used before gTTS).
+    # Download: https://huggingface.co/rhasspy/piper-voices (e.g.
+    # en/en_US/amy/medium/en_US-amy-medium.onnx)
+    "piper_voice": "",
     # look
     "width": 1080,
     "height": 1920,

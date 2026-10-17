@@ -30,6 +30,9 @@ captions = ["faster-whisper>=1.0"]
 youtube = ["google-api-python-client>=2.0", "google-auth-oauthlib>=1.0"]
 x = ["tweepy>=4.14"]
 schedule = ["apscheduler>=3.10"]
+trends = ["pytrends>=4.9"]
+vision = ["torch", "transformers", "pillow"]
+mcp = ["mcp<2"]
 
 [project.scripts]
 reelforge = "reelforge.cli:app"

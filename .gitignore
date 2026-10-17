@@ -5,3 +5,8 @@ __pycache__/
 .DS_Store
 nvidia_watch.sh
 rerender_scene.py
+# Downloaded at first use, not shipped in the repo
+models/
+voices/
+*.onnx
+*.onnx.json
