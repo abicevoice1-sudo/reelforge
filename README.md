@@ -13,7 +13,7 @@ ReelForge is an AI video studio that takes one sentence — or today's trends �
 reelforge trends food                    # what's hot right now (free, no keys)
 reelforge batch food --count 5           # turn the top 5 trends into 5 videos
 reelforge serve                          # 🆕 web studio: http://localhost:8000
-reelforge agent "make a 30s reel about hyderabadi biryani and post it Friday at 6pm"
+reelforge agent "make a 30s reel about coffee and post it Friday at 6pm"
 ```
 
 ## 🖥️ ReelForge Studio (web UI)
@@ -116,7 +116,7 @@ reelforge init          # guided setup: keys, voice, defaults
 reelforge doctor        # verify every dependency
 
 # Your first video (needs a free Pixabay key + any LLM key)
-reelforge new "hyderabadi biryani" --duration 30
+reelforge new "coffee" --duration 30
 
 # Ride the trends
 reelforge trends ai --limit 5
