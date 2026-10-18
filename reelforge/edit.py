@@ -1,6 +1,6 @@
 """Edit stage: the FFmpeg render pipeline.
 
-Per scene: stock clip is reframed to 9:16 (1080x1920), trimmed to the scene
+Per scene: stock clip is reframed to the target aspect ratio, trimmed to the scene
 length (+ transition overlap), and chained with xfade transitions. Voiceovers
 concatenate gaplessly; the music bed is ducked under speech; karaoke captions
 are burned in; hook + CTA text overlays finish the viral look.
@@ -20,7 +20,16 @@ from .music import prepare_music
 from .schemas import EditPlan
 from .voice import probe_duration
 
-W, H, FPS = 1080, 1920, 30
+# Top 5 most common video aspect ratios in the world.
+ASPECT_RATIOS = {
+    "9:16": {"label": "9:16 Vertical", "desc": "TikTok, Reels, Shorts", "w": 1080, "h": 1920},
+    "16:9": {"label": "16:9 Widescreen", "desc": "YouTube, TV", "w": 1920, "h": 1080},
+    "1:1": {"label": "1:1 Square", "desc": "Instagram feed", "w": 1080, "h": 1080},
+    "4:5": {"label": "4:5 Portrait", "desc": "Instagram portrait", "w": 1080, "h": 1350},
+    "21:9": {"label": "21:9 Ultrawide", "desc": "Cinematic", "w": 2560, "h": 1080},
+}
+
+FPS = 30
 
 _XFADE = {"cut": ("fade", 0.04), "fade": ("fade", 0.5),
           "slide": ("slideleft", 0.5), "zoom": ("fade", 0.04)}
@@ -34,7 +43,7 @@ def render(plan: EditPlan, clips: list[Path], voiceovers: list[Path],
            captions_ass: Path, words: list[Word], workdir: Path,
            music_track: Path | None = None,
            cfg: Config | None = None) -> Path:
-    """Render the final 1080x1920 MP4. Returns the output path."""
+    """Render the final MP4 at the configured aspect ratio. Returns the output path."""
     cfg = cfg or Config()
     n = len(plan.scenes)
     assert len(clips) == n and len(voiceovers) == n
@@ -58,16 +67,18 @@ def render(plan: EditPlan, clips: list[Path], voiceovers: list[Path],
 
     fc: list[str] = []
 
-    # --- per-scene video prep: trim (+xfade overlap), reframe 9:16 ---
+    # --- per-scene video prep: trim (+xfade overlap), reframe to target ratio ---
     # Cinematic treatment (config `cinematic`, default on): a slow Ken Burns
     # push-in on every clip plus a subtle film grade. This is the cheapest
     # way to make stock footage feel directed instead of slideshow-flat.
     cinematic = cfg.get("cinematic", True)
+    W = cfg.get("width", 1080)
+    H = cfg.get("height", 1920)
     for i, scene in enumerate(plan.scenes):
         vi = 2 * i
         d = durs[i] + (xfades[i][1] if i < n - 1 else 0.0)
         zoom = scene.transition == "zoom"
-        sw, sh = (1242, 2208) if zoom else (W, H)
+        sw, sh = (int(W * 1.15), int(H * 1.15)) if zoom else (W, H)
         prep = (f"[{vi}:v]trim=0:{d:.2f},setpts=PTS-STARTPTS,"
                 f"scale={sw}:{sh}:force_original_aspect_ratio=increase,")
         if cinematic and not zoom:

@@ -10,7 +10,7 @@ from pathlib import Path
 from ..config import Config
 
 ADAPTERS = ("youtube", "tiktok", "instagram", "x", "threads", "bluesky",
-            "linkedin", "pinterest")
+            "linkedin", "pinterest", "facebook", "facebook_page")
 
 # What each platform needs before it can post. Used by the Studio dashboard
 # to show per-platform readiness at a glance. Values are env var names;
@@ -24,12 +24,15 @@ PLATFORM_REQUIREMENTS = {
     "bluesky": ("BSKY_HANDLE", "BSKY_APP_PASSWORD"),
     "linkedin": ("LINKEDIN_ACCESS_TOKEN",),
     "pinterest": ("PINTEREST_ACCESS_TOKEN", "PINTEREST_BOARD_ID"),
+    "facebook": ("FB_ACCESS_TOKEN",),
+    "facebook_page": ("FB_PAGE_ID", "FB_PAGE_ACCESS_TOKEN"),
 }
 
 PLATFORM_LABELS = {
     "youtube": "YouTube Shorts", "tiktok": "TikTok", "instagram": "Instagram Reels",
     "x": "X (Twitter)", "threads": "Threads", "bluesky": "Bluesky",
     "linkedin": "LinkedIn", "pinterest": "Pinterest",
+    "facebook": "Facebook (Profile)", "facebook_page": "Facebook Page",
 }
 
 
@@ -79,6 +82,10 @@ def publish(platform: str, video: Path, title: str, description: str,
         from .linkedin import publish as fn
     elif platform == "pinterest":
         from .pinterest import publish as fn
+    elif platform == "facebook":
+        from .facebook import publish as fn
+    elif platform == "facebook_page":
+        from .facebook_page import publish as fn
     else:
         raise ValueError(f"Unknown platform {platform!r}. Choose from {ADAPTERS}.")
     return fn(video, title, description, hashtags, cfg, dry_run=dry_run, **kwargs)

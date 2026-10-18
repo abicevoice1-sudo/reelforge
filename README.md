@@ -94,7 +94,7 @@ prompt ──▶ script ──▶ voice ──▶ visuals ──▶ captions ─
 | Trend harvesting (free, no keys) | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Batch production | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Karaoke word-level captions | ✅ | ✅ | ✅ | ❌ | ✅ |
-| Official publishing APIs | ✅ 8 platforms | ⚠️ Selenium for YT | ✅ | ✅ | ⚠️ |
+| Official publishing APIs | ✅ 10 platforms | ⚠️ Selenium for YT | ✅ | ✅ | ⚠️ |
 | Multi-language dubbing | ✅ 10 options (incl. Roman Urdu/Hindi, Chinese) | ❌ | ❌ | ❌ | ✅ |
 | Real analytics pull | ✅ | ❌ | ❌ | ✅ | ❌ |
 | Web UI | ✅ Studio | ✅ | ✅ | ✅ | ✅ |
@@ -141,8 +141,8 @@ you). On Python 3.14+ the offline footage check is skipped automatically
 (torch has no build for it yet).
 
 Make a video in the 🎬 Studio tab, then hit the 🚀 **Publish tab** to post it to
-8 platforms (YouTube, TikTok, Instagram, X, Threads, Bluesky, LinkedIn,
-Pinterest) in one click — with per-platform setup status and dry-run safety.
+10 platforms (YouTube, TikTok, Instagram, X, Threads, Bluesky, LinkedIn,
+Pinterest, Facebook, Facebook Page) in one click — with per-platform setup status and dry-run safety.
 
 Manual install, if you prefer it piecemeal:
 

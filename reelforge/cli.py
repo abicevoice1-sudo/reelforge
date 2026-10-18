@@ -69,9 +69,17 @@ def doctor():
 @app.command()
 def new(topic: str, duration: int = typer.Option(30, help="Target seconds (5-180)"),
         voice: Optional[str] = typer.Option(None, help="Edge-TTS voice id"),
-        style: Optional[str] = typer.Option(None, help="karaoke|minimal|bold")):
+        style: Optional[str] = typer.Option(None, help="karaoke|minimal|bold"),
+        ratio: Optional[str] = typer.Option(None, help="9:16|16:9|1:1|4:5|21:9")):
     """Create a video from a prompt: script → voice → footage → captions → render."""
-    cfg = _cfg(voice=voice, caption_style=style)
+    from .edit import ASPECT_RATIOS
+    overrides: dict = {"voice": voice, "caption_style": style}
+    if ratio and ratio in ASPECT_RATIOS:
+        overrides["width"] = ASPECT_RATIOS[ratio]["w"]
+        overrides["height"] = ASPECT_RATIOS[ratio]["h"]
+    elif ratio:
+        console.print(f"[yellow]Unknown ratio {ratio!r}; using 9:16.[/yellow]")
+    cfg = _cfg(**{k: v for k, v in overrides.items() if v is not None})
     workdir = pipeline.create_project(topic, duration, cfg)
     console.print(f"Project: [bold]{workdir.name}[/bold]  •  "
                   f"Publish with: reelforge publish {workdir.name} --platforms youtube,tiktok")

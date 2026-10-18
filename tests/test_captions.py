@@ -231,9 +231,9 @@ def test_linkedin_pinterest_dry_run():
     from pathlib import Path
     from reelforge.publish import publish, ADAPTERS
     from reelforge.config import Config
-    assert len(ADAPTERS) == 8
+    assert len(ADAPTERS) == 10
     v = Path("/tmp/fake.mp4")
-    for p in ("linkedin", "pinterest"):
+    for p in ("linkedin", "pinterest", "facebook", "facebook_page"):
         r = publish(p, v, "T", "d", ["#t"], Config(), dry_run=True)
         assert r["platform"] == p and r["dry_run"] is True
 

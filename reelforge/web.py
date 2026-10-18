@@ -30,6 +30,7 @@ class GenRequest(BaseModel):
     topic: str
     duration: int = 30
     language: str = "en"
+    ratio: str = "9:16"
 
 
 class TrendRequest(BaseModel):
@@ -43,10 +44,16 @@ class PublishRequest(BaseModel):
     dry_run: bool = True
 
 
-def _run_generation(job_id: str, topic: str, duration: int, language: str = "en"):
+def _run_generation(job_id: str, topic: str, duration: int, language: str = "en",
+                    ratio: str = "9:16"):
     _jobs[job_id] = {"status": "running", "topic": topic, "started": time.time()}
     try:
-        cfg = Config()
+        from reelforge.edit import ASPECT_RATIOS
+        overrides = {}
+        if ratio in ASPECT_RATIOS:
+            overrides["width"] = ASPECT_RATIOS[ratio]["w"]
+            overrides["height"] = ASPECT_RATIOS[ratio]["h"]
+        cfg = Config(overrides=overrides)
         workdir = pipeline.create_project(topic, duration, cfg)
         slug = workdir.name
         if language and language != "en":
@@ -65,7 +72,8 @@ def _run_generation(job_id: str, topic: str, duration: int, language: str = "en"
 def generate(req: GenRequest):
     job_id = uuid.uuid4().hex[:8]
     t = threading.Thread(target=_run_generation,
-                         args=(job_id, req.topic, req.duration, req.language),
+                         args=(job_id, req.topic, req.duration, req.language,
+                               req.ratio),
                          daemon=True)
     t.start()
     return {"job_id": job_id}
@@ -85,14 +93,70 @@ _SETTING_KEYS = [
     ("AGNES_API_KEY", "Agnes AI", "AI-generated video clips (free at platform.agnes-ai.com)"),
 ]
 
+# Step-by-step connection guides shown in Settings. Top-in-world = no doc-hunting.
+_CONNECT_GUIDES = {
+    "facebook": [
+        "Go to developers.facebook.com → create an app (Business type).",
+        "Add the Facebook Login product; request <b>publish_video</b> permission.",
+        "Open Graph API Explorer, select your app, get a User Token.",
+        "Paste it below as Facebook Token. Extend to long-lived in the Explorer.",
+    ],
+    "facebook_page": [
+        "You need a Facebook Page you admin + a Meta app (see Facebook guide above).",
+        "In Graph API Explorer: get a User Token, then query <b>/me/accounts</b>.",
+        "Copy your Page's <b>id</b> → Facebook Page ID below.",
+        "Copy the Page's <b>access_token</b> → Facebook Page Token below.",
+        "Extend it to long-lived (never expires) via the Access Token Debugger.",
+    ],
+    "youtube": [
+        "Go to console.cloud.google.com → create a project → enable YouTube Data API v3.",
+        "Create OAuth credentials (Desktop app), download the JSON.",
+        "Save it as <b>~/.reelforge/youtube_client.json</b>.",
+        "Run any publish once — a browser window asks you to grant access, then it's saved.",
+    ],
+    "tiktok": [
+        "Apply at developers.tiktok.com (Content Posting API, needs review).",
+        "Create an app, get the client key/secret, complete OAuth.",
+        "Paste the resulting access token below as TikTok token.",
+    ],
+    "instagram": [
+        "You need an Instagram Business/Creator account linked to a Facebook Page.",
+        "Meta app with <b>instagram_basic</b> + <b>instagram_content_publish</b>.",
+        "Get a long-lived Page token → query <b>/me/accounts</b> → find the IG user id.",
+        "Paste token + user ID below. Videos also need a <b>public URL</b>.",
+    ],
+    "x": [
+        "Apply at developer.x.com → create a project + app.",
+        "Generate API key/secret + access token/secret with read+write.",
+        "Paste all four below.",
+    ],
+    "threads": [
+        "Meta app with Threads API access; create a Threads use case.",
+        "Complete OAuth to get a user token + your Threads user ID.",
+        "Paste both below. Videos need a <b>public URL</b>.",
+    ],
+    "bluesky": [
+        "Log in at bsky.app → Settings → App passwords → create one.",
+        "Paste your handle (you.bsky.social) + the app password below. Free, instant.",
+    ],
+    "linkedin": [
+        "Create an app at developer.linkedin.com, request <b>w_member_social</b>.",
+        "Complete OAuth, paste the access token below.",
+    ],
+    "pinterest": [
+        "Create an app at developers.pinterest.com, request write scopes.",
+        "Complete OAuth, paste the token + your board ID below.",
+    ],
+}
+
 _SETTING_GROUPS = [
-    ("Content APIs", "Footage, scripts, AI visuals", [
+    ("🎬 Video Generation", "APIs needed to MAKE videos", [
         ("PIXABAY_API_KEY", "Pixabay", "Real stock footage (free key at pixabay.com/api)"),
         ("GEMINI_API_KEY", "Gemini", "AI scripts + footage checks (free at aistudio.google.com)"),
         ("NVIDIA_API_KEY", "NVIDIA NIM", "Backup AI scripts (free at build.nvidia.com)"),
         ("AGNES_API_KEY", "Agnes AI", "AI-generated video clips (free at platform.agnes-ai.com)"),
     ]),
-    ("Publishing", "Credentials for one-click posting", [
+    ("📢 Publishing", "APIs needed to POST videos (connect your socials)", [
         ("TIKTOK_ACCESS_TOKEN", "TikTok", "Access token (see docs/setup-tiktok.md)"),
         ("IG_ACCESS_TOKEN", "Instagram", "Access token (see docs/setup-instagram.md)"),
         ("IG_USER_ID", "Instagram User ID", "Your Instagram business user ID"),
@@ -107,6 +171,9 @@ _SETTING_GROUPS = [
         ("LINKEDIN_ACCESS_TOKEN", "LinkedIn Token", "Access token"),
         ("PINTEREST_ACCESS_TOKEN", "Pinterest Token", "Access token"),
         ("PINTEREST_BOARD_ID", "Pinterest Board ID", "Target board for pins"),
+        ("FB_ACCESS_TOKEN", "Facebook Token", "User token — posts to your personal timeline"),
+        ("FB_PAGE_ID", "Facebook Page ID", "Your Page's numeric ID"),
+        ("FB_PAGE_ACCESS_TOKEN", "Facebook Page Token", "Page token — posts to your Page"),
     ]),
 ]
 
@@ -133,6 +200,74 @@ def list_languages():
     return {"languages": [{"code": c, "name": n} for c, n in DUB_LANGUAGES.items()]}
 
 
+@app.get("/api/limits")
+def api_limits():
+    from reelforge import api_limits as lim
+    return {"apis": lim.status(), "videos_possible": lim.videos_possible_today()}
+
+
+@app.get("/api/ratios")
+def list_ratios():
+    from reelforge.edit import ASPECT_RATIOS
+    return {"ratios": [{"key": k, **v} for k, v in ASPECT_RATIOS.items()]}
+
+
+_AUTO_CFG = Path.home() / ".reelforge" / "auto.json"
+
+
+def _load_auto() -> dict:
+    import json as _json
+    if _AUTO_CFG.exists():
+        return _json.loads(_AUTO_CFG.read_text())
+    return {"enabled": False, "niche": "", "per_day": 1, "platforms": [],
+            "language": "en", "post_time": "18:00"}
+
+
+class AutoRequest(BaseModel):
+    enabled: bool = False
+    niche: str = ""
+    per_day: int = 1
+    platforms: list = []
+    language: str = "en"
+    post_time: str = "18:00"
+
+
+@app.get("/api/auto")
+def get_auto():
+    from reelforge import schedule as sched
+    cfg = _load_auto()
+    cfg["queued"] = len(sched.list_jobs("queued"))
+    return cfg
+
+
+@app.post("/api/auto")
+def set_auto(req: AutoRequest):
+    import json as _json
+    from datetime import datetime, timedelta
+    from reelforge import schedule as sched
+    cfg = {"enabled": req.enabled, "niche": req.niche,
+           "per_day": max(1, min(5, req.per_day)),
+           "platforms": req.platforms, "language": req.language,
+           "post_time": req.post_time}
+    _AUTO_CFG.parent.mkdir(parents=True, exist_ok=True)
+    _AUTO_CFG.write_text(_json.dumps(cfg, indent=2))
+    # Queue today's generation jobs immediately when enabling
+    queued = 0
+    if req.enabled and req.niche.strip():
+        from reelforge import api_limits as lim
+        possible = lim.videos_possible_today()
+        n = min(cfg["per_day"], max(0, possible))
+        now = datetime.now()
+        for i in range(n):
+            run_at = now + timedelta(minutes=2 + i * 5)
+            sched.enqueue(run_at, "auto_generate", {
+                "niche": req.niche.strip(), "language": req.language,
+                "platforms": req.platforms, "post_time": req.post_time,
+            })
+            queued += 1
+    return {"ok": True, "queued": queued}
+
+
 class LyricsRequest(BaseModel):
     lyrics: str
     title: str = ""
@@ -150,6 +285,19 @@ def api_lyrics(req: LyricsRequest):
     return {"ok": True, "slug": workdir.name, "final": meta["final"]}
 
 
+_KEY_GUIDE = {
+    "FB_ACCESS_TOKEN": "facebook",
+    "FB_PAGE_ID": "facebook_page", "FB_PAGE_ACCESS_TOKEN": "facebook_page",
+    "TIKTOK_ACCESS_TOKEN": "tiktok",
+    "IG_ACCESS_TOKEN": "instagram", "IG_USER_ID": "instagram",
+    "X_API_KEY": "x", "X_API_SECRET": "x", "X_ACCESS_TOKEN": "x", "X_ACCESS_SECRET": "x",
+    "THREADS_USER_ID": "threads", "THREADS_ACCESS_TOKEN": "threads",
+    "BSKY_HANDLE": "bluesky", "BSKY_APP_PASSWORD": "bluesky",
+    "LINKEDIN_ACCESS_TOKEN": "linkedin",
+    "PINTEREST_ACCESS_TOKEN": "pinterest", "PINTEREST_BOARD_ID": "pinterest",
+}
+
+
 @app.get("/api/settings")
 def get_settings():
     import os as _os
@@ -158,7 +306,9 @@ def get_settings():
     for gname, gdesc, keys in _SETTING_GROUPS:
         items = []
         for k, label, hint in keys:
+            guide = _CONNECT_GUIDES.get(_KEY_GUIDE.get(k, ""), [])
             items.append({"key": k, "label": label, "hint": hint,
+                          "guide": guide,
                           "set": bool(_os.environ.get(k) or file_vals.get(k))})
         groups.append({"name": gname, "desc": gdesc, "keys": items})
     return {"groups": groups}
@@ -415,13 +565,14 @@ h3 .sub{font-weight:500;font-size:13px;color:var(--dim);margin-left:10px}
 <button onclick="tab('stats')">📊 Stats</button>
 <button onclick="tab('settings')">⚙️ Settings</button>
 <button onclick="tab('lyrics')">🎵 Lyrics</button>
+<button onclick="tab('auto')">🤖 Auto</button>
 </nav><main>
 <div id="t-studio" class="tab on">
  <div class="panel hero" id="welcome">
   <h2>Turn any idea into a viral short. <span>Free, forever.</span></h2>
   <p>Pick a template below, or describe your own topic. ReelForge writes the script,
   narrates it, finds the footage, adds karaoke captions, and renders a 1080×1920
-  video — then publishes it to 8 platforms in one click. <b>50 languages</b> supported.</p>
+  video — then publishes it to 10 platforms in one click. <b>50 languages</b> supported.</p>
   <button class="ghost" onclick="document.getElementById('welcome').style.display='none'">Got it — hide this</button>
  </div>
  <div class="panel"><h3>🎨 Start from a template</h3>
@@ -435,6 +586,10 @@ h3 .sub{font-weight:500;font-size:13px;color:var(--dim);margin-left:10px}
    <div style="max-width:150px"><label>Language</label>
     <select id="lang">
      <option value="en">English</option>
+    </select></div>
+   <div style="max-width:170px"><label>Aspect ratio</label>
+    <select id="ratio">
+     <option value="9:16">9:16 Vertical</option>
     </select></div>
    <div style="max-width:150px"><label>&nbsp;</label><br>
     <button class="go" id="genbtn" onclick="generate()">Forge ⚒️</button></div>
@@ -480,6 +635,31 @@ h3 .sub{font-weight:500;font-size:13px;color:var(--dim);margin-left:10px}
 </div>
 <div id="t-stats" class="tab"><div class="panel"><h3>Studio stats</h3>
  <div id="statlist"></div></div></div>
+<div id="t-auto" class="tab">
+ <div class="panel hero"><h2>🤖 Autopilot. <span>Videos while you sleep.</span></h2>
+  <p>Pick a niche. ReelForge harvests trends, generates videos, dubs them, and
+  publishes on schedule — <b>respecting every API's free limits automatically</b>.
+  Keep <b>reelforge worker</b> running (or the Studio server) to process the queue.</p>
+ </div>
+ <div class="panel"><h3>⚙️ Autopilot settings</h3>
+  <div class="row">
+   <div><label>Niche</label><input id="auto_niche" placeholder="e.g. motivation, football, cooking"></div>
+   <div style="max-width:110px"><label>Per day</label>
+    <select id="auto_perday"><option>1</option><option>2</option><option>3</option></select></div>
+   <div style="max-width:130px"><label>Post at</label><input id="auto_time" type="time" value="18:00"></div>
+   <div style="max-width:170px"><label>Language</label><select id="auto_lang"><option value="en">English</option></select></div>
+  </div>
+  <div style="margin:14px 0"><label>Publish to (leave empty = generate only)</label>
+   <div id="auto_plats" class="apistat"></div></div>
+  <button class="go" id="autobtn" onclick="saveAuto()">Enable autopilot 🤖</button>
+  <span class="log" id="automsg" style="margin-left:12px"></span>
+  <p class="log" id="autoqueuestatus" style="margin-top:10px"></p>
+ </div>
+ <div class="panel"><h3>📊 API limits <span class="sub">today's free-tier usage</span></h3>
+  <p class="log" id="limsummary"></p>
+  <div id="limlist"></div>
+ </div>
+</div>
 <div id="t-lyrics" class="tab">
  <div class="panel"><h3>🎵 Lyrics video <span class="sub">karaoke-style, word-by-word</span></h3>
   <p class="log">Paste lyrics — one line per screen. ReelForge times each line across
@@ -529,7 +709,17 @@ event.target.classList.add('on');
 if(n==='library')loadProjects();if(n==='stats')loadStats();
 if(n==='trends')loadTrends();if(n==='publish')loadPublish();
 if(n==='settings')loadSettings();
-if(n==='lyrics')loadLanguages();}
+if(n==='lyrics')loadLanguages();
+async function loadRatios(){
+ try{
+  const r=await fetch('/api/ratios');const j=await r.json();
+  const sel=document.getElementById('ratio');
+  sel.innerHTML=j.ratios.map(x=>
+   `<option value="${x.key}" title="${x.desc}">${x.label} — ${x.desc}</option>`).join('');
+ }catch(e){}
+}
+loadRatios();
+if(n==='auto'){loadAuto();loadLimits();}}
 async function generateLyrics(){
  const lyrics=document.getElementById('lyr_text').value.trim();
  const title=document.getElementById('lyr_title').value.trim();
@@ -585,8 +775,9 @@ async function generate(){
  const btn=document.getElementById('genbtn');btn.disabled=true;
  const log=document.getElementById('genlog');log.textContent='Forging… (script → voice → verified footage → captions → render)';
  const lang=document.getElementById('lang').value;
+ const ratio=document.getElementById('ratio').value||'9:16';
  const r=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({topic,duration:+document.getElementById('dur').value,language:lang})});
+  body:JSON.stringify({topic,duration:+document.getElementById('dur').value,language:lang,ratio})});
  const {job_id}=await r.json();
  const iv=setInterval(async()=>{
   const s=await (await fetch('/api/jobs/'+job_id)).json();
@@ -696,14 +887,70 @@ async function loadApiStatus(){
  }catch(e){}
 }
 loadApiStatus();
+async function loadAuto(){
+ try{
+  const r=await fetch('/api/auto');const j=await r.json();
+  document.getElementById('auto_niche').value=j.niche||'';
+  document.getElementById('auto_perday').value=j.per_day||1;
+  document.getElementById('auto_time').value=j.post_time||'18:00';
+  document.getElementById('auto_lang').value=j.language||'en';
+  document.getElementById('autobtn').textContent=j.enabled?'Update autopilot 🤖':'Enable autopilot 🤖';
+  document.getElementById('autoqueuestatus').textContent=
+   (j.enabled?'🟢 Autopilot ON':'⚪ Autopilot off')+' — '+j.queued+' jobs queued';
+  // platform checkboxes
+  const pr=await fetch('/api/platforms');const pj=await pr.json();
+  const sel=new Set(j.platforms||[]);
+  document.getElementById('auto_plats').innerHTML=pj.platforms.map(p=>
+   `<label class="badge ${sel.has(p.key)?'ok':''}" style="cursor:pointer">
+    <input type="checkbox" data-plat="${p.key}" ${sel.has(p.key)?'checked':''} style="width:auto;margin-right:6px">${p.label}</label>`).join('');
+  // language options
+  const lr=await fetch('/api/languages');const lj=await lr.json();
+  const langsel=document.getElementById('auto_lang');
+  if(langsel.options.length<=1)lj.languages.forEach(l=>{
+   const o=document.createElement('option');o.value=l.code;o.textContent=l.name;langsel.appendChild(o);});
+  langsel.value=j.language||'en';
+ }catch(e){}
+}
+async function saveAuto(){
+ const plats=[...document.querySelectorAll('#auto_plats input:checked')].map(i=>i.dataset.plat);
+ const body={enabled:true,niche:document.getElementById('auto_niche').value,
+  per_day:parseInt(document.getElementById('auto_perday').value)||1,
+  platforms:plats,language:document.getElementById('auto_lang').value,
+  post_time:document.getElementById('auto_time').value||'18:00'};
+ if(!body.niche.trim()){document.getElementById('automsg').textContent='❌ Enter a niche first.';return;}
+ const r=await fetch('/api/auto',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+ const j=await r.json();
+ document.getElementById('automsg').textContent=j.ok?('✅ Autopilot on — '+j.queued+' videos queued today.'):'❌ Failed';
+ loadAuto();
+}
+async function loadLimits(){
+ try{
+  const r=await fetch('/api/limits');const j=await r.json();
+  document.getElementById('limsummary').innerHTML=
+   `🎬 You can still generate <b>${j.videos_possible} videos</b> today within free limits.`;
+  const groups={};
+  j.apis.forEach(a=>{(groups[a.group]=groups[a.group]||[]).push(a);});
+  document.getElementById('limlist').innerHTML=Object.entries(groups).map(([g,apis])=>
+   `<h4>${g==='generation'?'🎬 Video generation':'📢 Publishing'}</h4>`+
+   apis.map(a=>{
+    const bar=a.pct>=90?'var(--red)':a.pct>=60?'var(--acc)':'var(--grn)';
+    return `<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px">
+     <span><b>${a.label}</b> <span class="log">${a.used}/${a.limit} today</span></span>
+     <a href="#" onclick="tab('settings');return false" style="color:var(--acc2);font-size:12px">get key →</a></div>
+    <div style="height:6px;background:#1a2130;border-radius:3px;margin-top:4px">
+     <div style="height:100%;width:${a.pct}%;background:${bar};border-radius:3px"></div></div>
+    <p class="log" style="margin:2px 0 0;font-size:11.5px">${a.why}</p></div>`;}).join('')).join('');
+ }catch(e){}
+}
 async function loadSettings(){
  const r=await fetch('/api/settings');const j=await r.json();
  document.getElementById('keyform').innerHTML=j.groups.map(g=>
   `<h4 style="margin:18px 0 4px">${g.name} <span class="sub">${g.desc}</span></h4>`+
-  g.keys.map(k=>
-  `<div style="margin-bottom:12px"><label>${k.label} ${k.set?'<span class="badge ok">set</span>':'<span class="badge">not set</span>'}</label>
+  g.keys.map(k=>{
+   const guide=k.guide&&k.guide.length?`<details style="margin-top:6px"><summary style="cursor:pointer;color:var(--acc2);font-size:12.5px;font-weight:600">How to connect →</summary><ol class="log" style="margin:8px 0 0;padding-left:20px;font-size:12.5px">${k.guide.map(s=>`<li style="margin-bottom:4px">${s}</li>`).join('')}</ol></details>`:'';
+   return `<div style="margin-bottom:12px"><label>${k.label} ${k.set?'<span class="badge ok">set</span>':'<span class="badge">not set</span>'}</label>
    <input type="password" id="key_${k.key}" placeholder="${k.set?'•••••• (enter new to replace)':'Paste key here'}" autocomplete="off">
-   <p class="log" style="margin:4px 0 0">${k.hint}</p></div>`).join('')).join('');
+   <p class="log" style="margin:4px 0 0">${k.hint}</p>${guide}</div>`;}).join('')).join('');
 }
 async function saveSettings(){
  const keys={};

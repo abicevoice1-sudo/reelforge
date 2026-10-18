@@ -113,6 +113,43 @@ def cancel(job_id: int) -> bool:
     return ok
 
 
+def _run_auto_generate(payload: dict, cfg) -> None:
+    """Generate a video from a niche trend, dub if needed, queue publishing."""
+    from datetime import datetime, timedelta
+    from . import api_limits as lim, pipeline, trends as tmod, dub as dubmod
+
+    niche = payload.get("niche", "general")
+    language = payload.get("language", "en")
+    platforms = payload.get("platforms", [])
+    post_time = payload.get("post_time", "18:00")
+
+    # Respect daily API limits — skip quietly if quota is exhausted.
+    if lim.videos_possible_today() < 1:
+        print("[worker] auto_generate skipped: API quota exhausted today")
+        return
+
+    harvested = tmod.harvest(niche, 1)
+    topic = tmod.to_video_prompt(harvested[0], niche) if harvested else f"{niche} facts"
+    workdir = pipeline.create_project(topic, 30, cfg)
+    slug = workdir.name
+    lim.record("gemini", 2)
+    lim.record("pixabay", 3)
+
+    if language != "en":
+        slug = dubmod.dub_project(slug, language, cfg).name
+
+    if platforms:
+        hh, mm = (post_time.split(":") + ["0"])[:2]
+        run_at = datetime.now().replace(hour=int(hh), minute=int(mm),
+                                        second=0, microsecond=0)
+        if run_at <= datetime.now():
+            run_at += timedelta(days=1)
+        enqueue(run_at, "publish", {"slug": slug, "platforms": platforms})
+        print(f"[worker] auto video {slug} → publish at {run_at:%H:%M}")
+    else:
+        print(f"[worker] auto video {slug} ready (no platforms set)")
+
+
 def run_worker(poll_seconds: int = 30, once: bool = False,
                cfg: Config | None = None) -> None:
     """Publish due jobs. Runs forever unless once=True."""
@@ -133,6 +170,8 @@ def run_worker(poll_seconds: int = 30, once: bool = False,
                     pipeline.publish_project(payload["slug"],
                                              payload["platforms"], cfg,
                                              dry_run=payload.get("dry_run", False))
+                elif kind == "auto_generate":
+                    _run_auto_generate(payload, cfg)
                 else:
                     raise ValueError(f"unknown job kind {kind!r}")
                 con.execute("UPDATE jobs SET state='done', finished_at=? WHERE id=?",
