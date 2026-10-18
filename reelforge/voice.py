@@ -29,6 +29,29 @@ SAMPLE_VOICES = {
 DUB_LANGUAGES = {"ur": "Urdu", "hi": "Hindi", "ar": "Arabic", "es": "Spanish",
                  "fr": "French", "de": "German", "pt": "Portuguese"}
 
+# Offline Piper voices shipped in voices/ (repo root). Used automatically when
+# Edge-TTS is unreachable, keyed by language — so a Urdu dub never falls back
+# to the robotic gTTS voice while a native neural model sits on disk.
+PIPER_VOICES = {
+    "en": "en_US-amy-medium.onnx",
+    "ur": "ur_PK-aegis_female-medium.onnx",
+}
+
+
+def _resolve_piper_model(voice: str, cfg: "Config") -> str:
+    """Pick the best local Piper model for this voice's language."""
+    voices_dir = Path(__file__).resolve().parent.parent / "voices"
+    lang = voice.split("-")[0].lower() if "-" in voice else "en"
+    candidate = PIPER_VOICES.get(lang)
+    if candidate:
+        p = voices_dir / candidate
+        if p.exists():
+            return str(p)
+    configured = cfg.get("piper_voice") or ""
+    if configured and Path(configured).expanduser().exists():
+        return configured
+    return ""
+
 
 async def _edge_tts(text: str, out: Path, voice: str, rate: str) -> None:
     import edge_tts
@@ -66,10 +89,10 @@ def synthesize_scene(text: str, out: Path, cfg: Config | None = None) -> Path:
             "edge-tts is not installed. Run: pip install 'reelforge[voice]'."
         ) from exc
     except Exception:
-        # Edge-TTS unreachable (restricted networks, etc.) → Piper neural
-        # offline voice if configured, else gTTS fallback.
-        piper_model = cfg.get("piper_voice") or ""
-        if piper_model and Path(piper_model).expanduser().exists():
+        # Edge-TTS unreachable (restricted networks, etc.) → best local
+        # Piper neural voice for this language, else gTTS fallback.
+        piper_model = _resolve_piper_model(voice, cfg)
+        if piper_model:
             _piper_tts(text, out, piper_model)
         else:
             _gtts_fallback(text, out, voice)
