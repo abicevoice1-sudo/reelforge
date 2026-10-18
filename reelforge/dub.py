@@ -36,6 +36,33 @@ def translate(text: str, lang: str, cfg: Config) -> str:
     raise RuntimeError(f"Translation failed after 3 attempts: {last_err}")
 
 
+def transliterate(text: str, lang: str, cfg: Config) -> str:
+    """Roman-script transliteration for ur-roman / hi-roman dubs.
+
+    The voice stays native-script (neural models are trained on it);
+    only the on-screen captions go Roman — e.g. "Aap kaise ho?"
+    """
+    from . import llm
+    base = voice.ROMAN_BASE[lang]
+    lang_name = voice.DUB_LANGUAGES[base]
+    last_err: Exception | None = None
+    for attempt in range(3):
+        try:
+            return llm.chat_text(
+                f"You transliterate {lang_name} text into Roman {lang_name} "
+                "(the language written in Latin script, natural and conversational "
+                "like 'Aap kaise ho?' — never translate to English, only change "
+                "the script). Keep every word, same order, same punch. "
+                "Return ONLY the transliteration, no quotes or explanations.",
+                text, cfg, temperature=0.2)
+        except Exception as e:  # noqa: BLE001
+            last_err = e
+            print(f"transliterate: attempt {attempt + 1}/3 failed ({e}); retrying…")
+            import time
+            time.sleep(5 * (attempt + 1))
+    raise RuntimeError(f"Transliteration failed after 3 attempts: {last_err}")
+
+
 def dub_project(slug: str, lang: str, cfg: Config | None = None) -> Path:
     cfg = cfg or Config()
     if lang not in voice.DUB_LANGUAGES:
@@ -55,14 +82,19 @@ def dub_project(slug: str, lang: str, cfg: Config | None = None) -> Path:
 
     dub_voice = voice.SAMPLE_VOICES[lang][0]
     dub_cfg = Config(overrides={**cfg._data, "voice": dub_voice})
+    is_roman = lang in voice.ROMAN_BASE
+    base_lang = voice.ROMAN_BASE.get(lang, lang)
 
     # Scenes are independent: translate + synthesize in parallel.
     # Sequential was 9 × ~45s; parallel is ~1 minute total.
     def _dub_scene(scene):
-        translated = translate(scene.voiceover, lang, cfg)
+        translated = translate(scene.voiceover, base_lang, cfg)
         out = workdir / "audio" / f"scene_{scene.id:02d}.mp3"
+        # Voice always uses the native script (neural models are trained
+        # on it); Roman dubs transliterate only the on-screen captions.
         voice.synthesize_scene(translated, out, dub_cfg)
-        return scene.model_copy(update={"voiceover": translated}), out
+        caption_text = transliterate(translated, lang, cfg) if is_roman else translated
+        return scene.model_copy(update={"voiceover": caption_text}), out
 
     from concurrent.futures import ThreadPoolExecutor
     with ThreadPoolExecutor(max_workers=4) as ex:
@@ -72,11 +104,17 @@ def dub_project(slug: str, lang: str, cfg: Config | None = None) -> Path:
     audio_paths = [p for _, p in dubbed]
     # A dub is only done when every word on screen is translated —
     # hook and CTA overlays included, not just the narration.
+    if is_roman:
+        hook = transliterate(translate(plan.hook, base_lang, cfg), lang, cfg)
+        cta = transliterate(translate(plan.cta, base_lang, cfg), lang, cfg) if plan.cta else plan.cta
+    else:
+        hook = translate(plan.hook, base_lang, cfg)
+        cta = translate(plan.cta, base_lang, cfg) if plan.cta else plan.cta
     dub_plan = plan.model_copy(update={
         "scenes": new_scenes,
         "title": f"{plan.title} ({voice.DUB_LANGUAGES[lang]})",
-        "hook": translate(plan.hook, lang, cfg),
-        "cta": translate(plan.cta, lang, cfg) if plan.cta else plan.cta,
+        "hook": hook,
+        "cta": cta,
     })
     (workdir / "plan.json").write_text(dub_plan.model_dump_json(indent=2))
     final = _finish_project(dub_plan, workdir, audio_paths, dub_cfg)

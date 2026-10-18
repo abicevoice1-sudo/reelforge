@@ -39,7 +39,7 @@ say "Downloading CLIP vision model (offline footage gate, ~600MB, one time)"
 .venv/bin/python -c "from reelforge.vision_local import ensure_model; ensure_model(); print('clip ok')"
 ok "vision model ready"
 
-say "Downloading Piper neural voices (English + Urdu, offline, one time)"
+say "Downloading Piper neural voices (English + Urdu + Hindi, offline, one time)"
 mkdir -p voices
 dl_voice() { # $1 = filename
   [ -f "voices/$1" ] || curl -sL -o "voices/$1" "https://huggingface.co/rhasspy/piper-voices/resolve/main/$2"
@@ -49,7 +49,15 @@ dl_voice en_US-amy-medium.onnx        "en/en_US/amy/medium/en_US-amy-medium.onnx
 dl_voice en_US-amy-medium.onnx.json   "en/en_US/amy/medium/en_US-amy-medium.onnx.json"
 dl_voice ur_PK-aegis_female-medium.onnx      "ur/ur_PK/aegis_female/medium/ur_PK-aegis_female-medium.onnx"
 dl_voice ur_PK-aegis_female-medium.onnx.json "ur/ur_PK/aegis_female/medium/ur_PK-aegis_female-medium.onnx.json"
-ok "voices ready (English + Urdu)"
+dl_voice hi_IN-priyamvada-medium.onnx      "hi/hi_IN/priyamvada/medium/hi_IN-priyamvada-medium.onnx"
+dl_voice hi_IN-priyamvada-medium.onnx.json "hi/hi_IN/priyamvada/medium/hi_IN-priyamvada-medium.onnx.json"
+ok "voices ready (English + Urdu + Hindi)"
+
+say "Installing Urdu caption font (Noto Nastaliq Urdu)"
+mkdir -p ~/.fonts
+cp fonts/NotoNastaliqUrdu.ttf ~/.fonts/ 2>/dev/null || true
+fc-cache -f ~/.fonts >/dev/null 2>&1 || true
+ok "caption font ready"
 
 say "Setting up config + starter music"
 .venv/bin/python -m reelforge.cli init >/dev/null 2>&1 || true

@@ -36,11 +36,42 @@ def test_build_ass_rtl_urdu(tmp_path: Path):
     assert _is_rtl("نویں صدی")
     assert not _is_rtl("hello world")
     # RLM is the very first content char of the dialogue text,
-    # before any karaoke override blocks.
+    # before any karaoke override blocks (a {\fn} font override for
+    # Nastaliq may precede it).
     for line in text.splitlines():
         if line.startswith("Dialogue:"):
             payload = line.split(",", 9)[9]
-            assert payload.startswith(RLM), payload[:20]
+            assert RLM in payload[:40], payload[:40]
+            if "نویں" in payload:  # RTL: Nastaliq, not Arial fallback
+                assert payload.startswith("{\\fnNoto Nastaliq Urdu\\fs")
+
+
+def test_build_ass_rtl_no_kf_sweep(tmp_path: Path):
+    """RTL karaoke must NOT use \\kf: libass applies kf in visual order,
+    which highlights the wrong words for RTL. Instead each word gets its
+    own timed event with the current word highlighted."""
+    words = [Word("نویں", 0.0, 0.5), Word("صدی", 0.5, 1.0)]
+    out = tmp_path / "u.ass"
+    build_ass(words, out, style="karaoke")
+    text = out.read_text()
+    assert "\\kf" not in text
+    dialogues = [l for l in text.splitlines() if l.startswith("Dialogue:")]
+    assert len(dialogues) == 2
+    # First event (0.0-0.5) highlights the first word, second event the second.
+    assert "{\\c&H000019FF&}نویں{\\c&H00FFFFFF&}" in dialogues[0]
+    assert "{\\c&H000019FF&}صدی{\\c&H00FFFFFF&}" in dialogues[1]
+    assert "0:00:00.00,0:00:00.50" in dialogues[0]
+    assert "0:00:00.50,0:00:01.00" in dialogues[1]
+
+
+def test_build_ass_ltr_keeps_kf(tmp_path: Path):
+    """English karaoke still uses the \\kf sweep (it works fine LTR)."""
+    words = [Word("hello", 0.0, 0.5), Word("world", 0.5, 1.0)]
+    out = tmp_path / "e.ass"
+    build_ass(words, out, style="karaoke")
+    text = out.read_text()
+    assert "\\kf" in text
+    assert RLM not in text
 
 
 def test_build_ass_rtl_overlay(tmp_path: Path):
@@ -50,7 +81,9 @@ def test_build_ass_rtl_overlay(tmp_path: Path):
                          "kind": "hook"}])
     text = out.read_text()
     hook = [l for l in text.splitlines() if ",Hook," in l][0]
-    assert hook.split(",", 9)[9].startswith(RLM)
+    payload = hook.split(",", 9)[9]
+    assert RLM in payload[:40]
+    assert payload.startswith("{\\fnNoto Nastaliq Urdu\\fs")
 
 
 def test_speech_segments_merge():
@@ -206,9 +239,9 @@ def test_linkedin_pinterest_dry_run():
 
 
 def test_dub_language_map():
-    """Dubbing supports 7 languages with native neural voices."""
+    """Dubbing supports 9 language options with native neural voices."""
     from reelforge.voice import DUB_LANGUAGES, SAMPLE_VOICES
-    assert len(DUB_LANGUAGES) == 7
+    assert len(DUB_LANGUAGES) == 9
     for lang in DUB_LANGUAGES:
         assert SAMPLE_VOICES[lang], f"no voices for {lang}"
 

@@ -78,8 +78,15 @@ def _is_rtl(text: str) -> bool:
     )
 
 
-def _rtl(text: str) -> str:
-    return (RLM + text) if _is_rtl(text) else text
+def _rtl(text: str, fontsize: int = 64) -> str:
+    if not _is_rtl(text):
+        return text
+    # Nastaliq is Urdu's native calligraphic style — Arial's fallback
+    # shapes correctly but looks foreign to native readers. Nastaliq's
+    # glyphs are small relative to its em box, so scale ~1.7x for the
+    # same visual weight. The {\fn\fs} overrides must precede the RLM.
+    big = int(fontsize * 1.7)
+    return f"{{\\fnNoto Nastaliq Urdu\\fs{big}}}" + RLM + text
 
 
 def build_ass(words: list[Word], out: Path, style: str = "karaoke",
@@ -95,9 +102,13 @@ def build_ass(words: list[Word], out: Path, style: str = "karaoke",
 
     # Alignment 2 = bottom-center (MarginV measured from bottom),
     # 8 = top-center, 5 = middle-center.
+    # NOTE: the RTL per-word highlight below reuses these exact colors via
+    # explicit {\c} overrides (\2c alone does not apply in libass).
+    PRIMARY = "&H00FFFFFF"
+    SECONDARY = "&H000019FF"
     styles = {
         "karaoke": (
-            f"Style: Karaoke,Arial,{fontsize},&H00FFFFFF,&H000019FF,&H80000000,&H00000000,"
+            f"Style: Karaoke,Arial,{fontsize},{PRIMARY},{SECONDARY},&H80000000,&H00000000,"
             "-1,0,0,0,100,100,0,0,1,3,0,2,10,10,320,1"
         ),
         "minimal": (
@@ -146,26 +157,47 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     events = []
     for line in lines:
         start, end = _fmt_time(line[0].start), _fmt_time(line[-1].end)
-        if style == "karaoke":
+        line_text = " ".join(w.text for w in line)
+        if style == "karaoke" and not _is_rtl(line_text):
             body = "".join(
                 "{\\kf%d}%s " % (max(1, int((w.end - w.start) * 100)), _escape(w.text))
                 for w in line
             ).strip()
+            # RLM goes first so it sets the paragraph direction before any
+            # karaoke override blocks; timings stay glued to their words.
+            body = _rtl(body, fontsize)
+            events.append(
+                f"Dialogue: 0,{start},{end},{style_name},,0,0,0,,{body}"
+            )
+        elif style == "karaoke":
+            # RTL karaoke: libass applies \kf in *visual* order, so the
+            # highlight would sweep the wrong way and land on the wrong
+            # words. Instead emit one event per word with the current word
+            # highlighted — exact timing, correct RTL, no sweep-direction
+            # bug. (Explicit {\c} colors: bare \2c does not apply in libass.)
+            hi, lo = f"{{\\c{SECONDARY}&}}", f"{{\\c{PRIMARY}&}}"
+            for w in line:
+                parts = []
+                for w2 in line:
+                    t = _escape(w2.text)
+                    parts.append(f"{hi}{t}{lo}" if w2 is w else t)
+                body = _rtl(" ".join(parts), fontsize)
+                events.append(
+                    f"Dialogue: 0,{_fmt_time(w.start)},{_fmt_time(w.end)},"
+                    f"{style_name},,0,0,0,,{body}"
+                )
         else:
-            body = " ".join(_escape(w.text) for w in line)
-        # RLM goes first so it sets the paragraph direction before any
-        # karaoke override blocks; timings stay glued to their words.
-        body = _rtl(body)
-        events.append(
-            f"Dialogue: 0,{start},{end},{style_name},,0,0,0,,{body}"
-        )
+            body = _rtl(" ".join(_escape(w.text) for w in line), fontsize)
+            events.append(
+                f"Dialogue: 0,{start},{end},{style_name},,0,0,0,,{body}"
+            )
 
     for ov in overlays or []:
         kind = "Hook" if ov["kind"] == "hook" else "Cta"
         wrapped = _wrap(ov["text"], 24)
         events.append(
             f"Dialogue: 0,{_fmt_time(ov['start'])},{_fmt_time(ov['end'])},"
-            f"{kind},,0,0,0,,{_rtl(_escape(wrapped))}"
+            f"{kind},,0,0,0,,{_rtl(_escape(wrapped), fontsize)}"
         )
 
     out.write_text(header + "\n".join(events) + "\n", encoding="utf-8")

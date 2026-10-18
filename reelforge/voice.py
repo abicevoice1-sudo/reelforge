@@ -18,7 +18,9 @@ from .schemas import EditPlan
 SAMPLE_VOICES = {
     "en": ["en-US-AriaNeural", "en-US-GuyNeural", "en-GB-SoniaNeural"],
     "ur": ["ur-PK-AsadNeural", "ur-IN-GulNeural"],
+    "ur-roman": ["ur-PK-AsadNeural", "ur-IN-GulNeural"],
     "hi": ["hi-IN-SwaraNeural", "hi-IN-MadhurNeural"],
+    "hi-roman": ["hi-IN-SwaraNeural", "hi-IN-MadhurNeural"],
     "ar": ["ar-SA-ZariyahNeural", "ar-EG-SalmaNeural"],
     "es": ["es-ES-ElviraNeural", "es-MX-DaliaNeural"],
     "fr": ["fr-FR-DeniseNeural", "fr-CA-SylvieNeural"],
@@ -26,8 +28,14 @@ SAMPLE_VOICES = {
     "pt": ["pt-BR-FranciscaNeural", "pt-PT-RaquelNeural"],
 }
 
-DUB_LANGUAGES = {"ur": "Urdu", "hi": "Hindi", "ar": "Arabic", "es": "Spanish",
+DUB_LANGUAGES = {"ur": "Urdu", "ur-roman": "Urdu (Roman)",
+                 "hi": "Hindi", "hi-roman": "Hindi (Roman)",
+                 "ar": "Arabic", "es": "Spanish",
                  "fr": "French", "de": "German", "pt": "Portuguese"}
+
+# Roman dubs: native-script voice, Latin-script captions. The base language
+# drives translation and voice; captions get transliterated.
+ROMAN_BASE = {"ur-roman": "ur", "hi-roman": "hi"}
 
 # Offline Piper voices shipped in voices/ (repo root). Used automatically when
 # Edge-TTS is unreachable, keyed by language — so a Urdu dub never falls back
@@ -35,6 +43,7 @@ DUB_LANGUAGES = {"ur": "Urdu", "hi": "Hindi", "ar": "Arabic", "es": "Spanish",
 PIPER_VOICES = {
     "en": "en_US-amy-medium.onnx",
     "ur": "ur_PK-aegis_female-medium.onnx",
+    "hi": "hi_IN-priyamvada-medium.onnx",
 }
 
 
