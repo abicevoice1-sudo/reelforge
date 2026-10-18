@@ -78,6 +78,22 @@ def job_status(job_id: str):
     return _jobs[job_id]
 
 
+@app.get("/api/status")
+def api_status():
+    """Which external services are configured. Never leaks key values."""
+    import os as _os
+    def has(*names):
+        return any(_os.environ.get(n) for n in names)
+    return {"services": [
+        {"name": "Stock footage", "ok": has("PIXABAY_API_KEY"),
+         "hint": "Pixabay key → real footage (else placeholders)"},
+        {"name": "AI script", "ok": has("GEMINI_API_KEY", "NVIDIA_API_KEY"),
+         "hint": "Gemini/NVIDIA key → AI scripts (else templates)"},
+        {"name": "AI visuals", "ok": has("AGNES_API_KEY"),
+         "hint": "Agnes key → AI-generated clips (else stock)"},
+    ]}
+
+
 @app.post("/api/trends")
 def trends(req: TrendRequest):
     ts = trends_mod.harvest(req.niche, req.limit)
@@ -193,6 +209,24 @@ padding:14px;cursor:pointer;transition:border-color .15s}
 .res.ok{background:#052e16;border:1px solid #14532d}
 .res.err{background:#2a0a0a;border:1px solid #7f1d1d}
 .res a{color:#7dd3fc}
+.hero{background:linear-gradient(135deg,#1a0f2e,#0f2027);border:1px solid #f9731640}
+.hero h2{margin:0 0 10px;font-size:24px}.hero h2 span{color:var(--acc)}
+.hero p{color:var(--dim);line-height:1.6;margin:0 0 14px;max-width:640px}
+.hero p b{color:var(--txt)}
+button.ghost{background:none;border:1px solid var(--line);color:var(--dim);
+border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer}
+button.ghost:hover{color:var(--txt);border-color:var(--acc)}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.tcard{background:#0b0e14;border:1px solid var(--line);border-radius:10px;
+padding:16px;cursor:pointer;transition:all .15s}
+.tcard:hover{border-color:var(--acc);transform:translateY(-2px)}
+.tcard .emo{font-size:28px;margin-bottom:8px}
+.tcard h4{margin:0 0 6px;font-size:15px}
+.tcard p{margin:0;color:var(--dim);font-size:12.5px;line-height:1.5}
+.tcard .use{margin-top:10px;font-size:13px;color:var(--acc);font-weight:600}
+.apistat{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.apistat .badge{cursor:default}
+h3 .sub{font-weight:400;font-size:13px;color:var(--dim);margin-left:8px}
 </style></head><body>
 <header><h1>⚒️ Reel<span>Forge</span> Studio</h1></header>
 <nav>
@@ -203,7 +237,17 @@ padding:14px;cursor:pointer;transition:border-color .15s}
 <button onclick="tab('stats')">📊 Stats</button>
 </nav><main>
 <div id="t-studio" class="tab on">
- <div class="panel"><h3>New video</h3>
+ <div class="panel hero" id="welcome">
+  <h2>Turn any idea into a viral short. <span>Free, forever.</span></h2>
+  <p>Pick a template below, or describe your own topic. ReelForge writes the script,
+  narrates it, finds the footage, adds karaoke captions, and renders a 1080×1920
+  video — then publishes it to 8 platforms in one click. <b>9 languages</b> supported.</p>
+  <button class="ghost" onclick="document.getElementById('welcome').style.display='none'">Got it — hide this</button>
+ </div>
+ <div class="panel"><h3>🎨 Start from a template</h3>
+  <div class="tgrid" id="templates"></div>
+ </div>
+ <div class="panel"><h3>✏️ Or describe your own video</h3>
   <div class="row">
    <div><label>Topic</label><input id="topic" placeholder="hyderabadi biryani"></div>
    <div style="max-width:120px"><label>Seconds</label>
@@ -225,6 +269,9 @@ padding:14px;cursor:pointer;transition:border-color .15s}
     <button class="go" id="genbtn" onclick="generate()">Forge ⚒️</button></div>
   </div>
   <p class="log" id="genlog"></p>
+  <p class="log" style="margin-top:8px">🌍 <b>9 languages, one click.</b> Pick Urdu, Hindi, Arabic, Spanish… and ReelForge
+  dubs the entire video — native voice, translated captions, RTL-correct. No other free tool does this.</p>
+  <div class="apistat" id="apistat"></div>
  </div>
 </div>
 <div id="t-trends" class="tab">
@@ -270,6 +317,25 @@ document.querySelectorAll('nav button').forEach(e=>e.classList.remove('on'));
 event.target.classList.add('on');
 if(n==='library')loadProjects();if(n==='stats')loadStats();
 if(n==='trends')loadTrends();if(n==='publish')loadPublish();}
+const TEMPLATES=[
+ {emo:"🔥",name:"Motivation",topic:"5 brutal truths about success nobody tells you",dur:30,desc:"Punchy mindset content. High retention, high shares."},
+ {emo:"🍜",name:"Food",topic:"hyderabadi biryani recipe secrets",dur:35,desc:"Recipe reveals and food stories that make mouths water."},
+ {emo:"🤖",name:"AI & Tech",topic:"how AI video generation actually works",dur:30,desc:"Explainers on tech trends. Great for curious audiences."},
+ {emo:"💪",name:"Fitness",topic:"7 minute morning routine that changes everything",dur:30,desc:"Quick health wins. Huge save-and-share category."},
+ {emo:"✈️",name:"Travel",topic:"hidden gems in istanbul most tourists miss",dur:35,desc:"Wanderlust fuel. Aspirational and highly shareable."},
+ {emo:"💰",name:"Money",topic:"how compound interest makes you rich slowly",dur:30,desc:"Finance basics that everyone wishes they learned earlier."},
+];
+function renderTemplates(){
+ document.getElementById('templates').innerHTML=TEMPLATES.map((t,i)=>
+  `<div class="tcard" onclick="useTemplate(${i})"><div class="emo">${t.emo}</div><h4>${t.name}</h4><p>${t.desc}</p><div class="use">Use template →</div></div>`).join('');
+}
+function useTemplate(i){
+ const t=TEMPLATES[i];
+ document.getElementById('topic').value=t.topic;
+ document.getElementById('dur').value=t.dur;
+ document.getElementById('topic').scrollIntoView({behavior:'smooth',block:'center'});
+ document.getElementById('topic').focus();
+}
 function friendlyError(e){
  if(!e) return 'Something went wrong.';
  if(/non-zero exit status|ffmpeg/i.test(e)){
@@ -384,6 +450,15 @@ async function loadStats(){
    <div class="stat"><b>${s.total_mb}</b><span>MB of video</span></div>
    <div class="stat"><b>${s.platforms.length}</b><span>platforms</span></div>
    <p class="log" style="margin-top:14px">Platforms: ${s.platforms.join(', ')}</p>`;}
+renderTemplates();
+async function loadApiStatus(){
+ try{
+  const r=await fetch('/api/status');const j=await r.json();
+  document.getElementById('apistat').innerHTML=j.services.map(s=>
+   `<span class="badge ${s.ok?'ok':''}" title="${s.hint}">${s.ok?'✅':'⚪'} ${s.name}</span>`).join('');
+ }catch(e){}
+}
+loadApiStatus();
 </script></body></html>
 """
 
