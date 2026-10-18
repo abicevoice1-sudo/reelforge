@@ -127,6 +127,10 @@ def build_ass(words: list[Word], out: Path, style: str = "karaoke",
             f"Style: Cta,Arial Black,{int(fontsize * 1.1)},&H0000FFFF,&H00FFFFFF,&H90000000,&H00000000,"
             "-1,0,0,0,100,100,0,0,1,4,0,5,10,10,10,1"
         ),
+        "lyrics": (
+            f"Style: Lyrics,Arial Black,{fontsize},{PRIMARY},{SECONDARY},&H90000000,&H00000000,"
+            "-1,0,0,0,100,100,0,0,1,4,0,5,30,30,120,1"
+        ),
     }
     style_name = style.capitalize()
     # All styles must be declared — libass falls back to a tiny default style

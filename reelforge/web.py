@@ -85,6 +85,31 @@ _SETTING_KEYS = [
     ("AGNES_API_KEY", "Agnes AI", "AI-generated video clips (free at platform.agnes-ai.com)"),
 ]
 
+_SETTING_GROUPS = [
+    ("Content APIs", "Footage, scripts, AI visuals", [
+        ("PIXABAY_API_KEY", "Pixabay", "Real stock footage (free key at pixabay.com/api)"),
+        ("GEMINI_API_KEY", "Gemini", "AI scripts + footage checks (free at aistudio.google.com)"),
+        ("NVIDIA_API_KEY", "NVIDIA NIM", "Backup AI scripts (free at build.nvidia.com)"),
+        ("AGNES_API_KEY", "Agnes AI", "AI-generated video clips (free at platform.agnes-ai.com)"),
+    ]),
+    ("Publishing", "Credentials for one-click posting", [
+        ("TIKTOK_ACCESS_TOKEN", "TikTok", "Access token (see docs/setup-tiktok.md)"),
+        ("IG_ACCESS_TOKEN", "Instagram", "Access token (see docs/setup-instagram.md)"),
+        ("IG_USER_ID", "Instagram User ID", "Your Instagram business user ID"),
+        ("X_API_KEY", "X (Twitter) API Key", "Consumer key (see docs/setup-x.md)"),
+        ("X_API_SECRET", "X API Secret", "Consumer secret"),
+        ("X_ACCESS_TOKEN", "X Access Token", "Access token"),
+        ("X_ACCESS_SECRET", "X Access Secret", "Access token secret"),
+        ("THREADS_USER_ID", "Threads User ID", "Your Threads user ID"),
+        ("THREADS_ACCESS_TOKEN", "Threads Token", "Access token (needs a public video URL)"),
+        ("BSKY_HANDLE", "Bluesky Handle", "e.g. you.bsky.social"),
+        ("BSKY_APP_PASSWORD", "Bluesky App Password", "App password from bsky.app settings"),
+        ("LINKEDIN_ACCESS_TOKEN", "LinkedIn Token", "Access token"),
+        ("PINTEREST_ACCESS_TOKEN", "Pinterest Token", "Access token"),
+        ("PINTEREST_BOARD_ID", "Pinterest Board ID", "Target board for pins"),
+    ]),
+]
+
 
 def _env_path() -> Path:
     return Path.cwd() / ".env"
@@ -102,15 +127,41 @@ def _read_env_file() -> dict:
     return vals
 
 
+@app.get("/api/languages")
+def list_languages():
+    from reelforge.voice import DUB_LANGUAGES
+    return {"languages": [{"code": c, "name": n} for c, n in DUB_LANGUAGES.items()]}
+
+
+class LyricsRequest(BaseModel):
+    lyrics: str
+    title: str = ""
+    duration: int = 30
+
+
+@app.post("/api/lyrics")
+def api_lyrics(req: LyricsRequest):
+    from reelforge import pipeline as pipe_mod
+    cfg = Config()
+    workdir = pipe_mod.create_lyrics_project(req.lyrics, req.title,
+                                             max(5, min(180, req.duration)), cfg)
+    import json as _json
+    meta = _json.loads((workdir / "meta.json").read_text())
+    return {"ok": True, "slug": workdir.name, "final": meta["final"]}
+
+
 @app.get("/api/settings")
 def get_settings():
     import os as _os
     file_vals = _read_env_file()
-    return {"keys": [
-        {"key": k, "label": label, "hint": hint,
-         "set": bool(_os.environ.get(k) or file_vals.get(k))}
-        for k, label, hint in _SETTING_KEYS
-    ]}
+    groups = []
+    for gname, gdesc, keys in _SETTING_GROUPS:
+        items = []
+        for k, label, hint in keys:
+            items.append({"key": k, "label": label, "hint": hint,
+                          "set": bool(_os.environ.get(k) or file_vals.get(k))})
+        groups.append({"name": gname, "desc": gdesc, "keys": items})
+    return {"groups": groups}
 
 
 class SettingsRequest(BaseModel):
@@ -119,7 +170,7 @@ class SettingsRequest(BaseModel):
 
 @app.post("/api/settings")
 def save_settings(req: SettingsRequest):
-    allowed = {k for k, _, _ in _SETTING_KEYS}
+    allowed = {k for _, _, keys in _SETTING_GROUPS for k, _, _ in keys}
     vals = _read_env_file()
     for k, v in (req.keys or {}).items():
         if k not in allowed:
@@ -244,73 +295,118 @@ HTML_PAGE = """<!DOCTYPE html>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ReelForge Studio ⚒️</title>
 <style>
-:root{--bg:#0b0e14;--panel:#131722;--line:#232a3a;--txt:#e8ecf4;--dim:#8b94a7;
---acc:#f97316;--grn:#22c55e;--red:#ef4444}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);
-font-family:system-ui,-apple-system,sans-serif}
-header{padding:18px 28px;border-bottom:1px solid var(--line);display:flex;
-align-items:center;gap:12px}
-header h1{margin:0;font-size:20px}header h1 span{color:var(--acc)}
-nav{display:flex;gap:6px;padding:14px 28px 0}
-nav button{background:none;border:none;color:var(--dim);font-size:15px;
-padding:10px 16px;cursor:pointer;border-bottom:2px solid transparent}
-nav button.on{color:var(--txt);border-bottom-color:var(--acc)}
-main{padding:24px 28px;max-width:1100px}
-.tab{display:none}.tab.on{display:block}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;
-padding:20px;margin-bottom:18px}
-input,select,textarea{background:#0b0e14;border:1px solid var(--line);
-color:var(--txt);border-radius:8px;padding:10px 12px;font-size:14px;width:100%}
-button.go{background:var(--acc);border:none;color:#000;font-weight:700;
-border-radius:8px;padding:11px 22px;font-size:15px;cursor:pointer}
-button.go:disabled{opacity:.5}
-.row{display:flex;gap:12px;align-items:end}.row>*{flex:1}
-.trend{padding:12px;border-bottom:1px solid var(--line);cursor:pointer}
+:root{--bg:#0a0d13;--panel:#12161f;--panel2:#0d1119;--line:#222a3d;--line2:#2c3650;
+--txt:#eef1f7;--dim:#8f99ae;--dim2:#6b7488;
+--acc:#f97316;--acc2:#fb923c;--acc-dim:#f9731626;
+--grn:#22c55e;--red:#ef4444;--blu:#60a5fa;
+--grad:linear-gradient(135deg,#f97316,#ec4899);
+--shadow:0 8px 32px rgba(0,0,0,.45);
+--r:14px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);
+font-family:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+-webkit-font-smoothing:antialiased;line-height:1.55}
+::selection{background:var(--acc-dim)}
+header{padding:20px 32px;border-bottom:1px solid var(--line);display:flex;
+align-items:center;gap:12px;background:linear-gradient(180deg,#10141d,#0a0d13);
+position:sticky;top:0;z-index:50;backdrop-filter:blur(12px)}
+header h1{margin:0;font-size:22px;font-weight:800;letter-spacing:-.02em}
+header h1 span{background:var(--grad);-webkit-background-clip:text;
+background-clip:text;-webkit-text-fill-color:transparent}
+header .tag{font-size:11px;color:var(--dim);border:1px solid var(--line);
+padding:3px 10px;border-radius:20px;margin-left:8px}
+nav{display:flex;gap:4px;padding:14px 32px 0;overflow-x:auto}
+nav button{background:none;border:none;color:var(--dim);font-size:14.5px;
+font-weight:600;padding:11px 18px;cursor:pointer;border-radius:10px 10px 0 0;
+border-bottom:2px solid transparent;transition:all .18s;white-space:nowrap}
+nav button:hover{color:var(--txt);background:#ffffff08}
+nav button.on{color:var(--txt);border-bottom-color:var(--acc);
+background:linear-gradient(180deg,transparent,var(--acc-dim))}
+main{padding:26px 32px;max-width:1180px;margin:0 auto}
+.tab{display:none}.tab.on{display:block;animation:fadein .25s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+padding:24px;margin-bottom:20px;box-shadow:var(--shadow)}
+.panel h3{margin:0 0 16px;font-size:18px;font-weight:700;letter-spacing:-.01em}
+.panel h4{font-size:15px;font-weight:700;margin:20px 0 6px;color:var(--txt)}
+input,select,textarea{background:var(--panel2);border:1px solid var(--line);
+color:var(--txt);border-radius:10px;padding:11px 14px;font-size:14px;width:100%;
+transition:border-color .18s,box-shadow .18s;font-family:inherit}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc);
+box-shadow:0 0 0 3px var(--acc-dim)}
+textarea{resize:vertical;min-height:90px;line-height:1.6}
+label{display:block;font-size:13px;font-weight:600;color:var(--dim);margin-bottom:6px}
+button.go{background:var(--grad);border:none;color:#fff;font-weight:700;
+border-radius:10px;padding:12px 26px;font-size:15px;cursor:pointer;
+transition:transform .15s,box-shadow .15s;box-shadow:0 4px 16px #f9731640}
+button.go:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 22px #f9731660}
+button.go:disabled{opacity:.5;cursor:default;transform:none}
+button.ghost{background:none;border:1px solid var(--line);color:var(--dim);
+border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;transition:all .18s}
+button.ghost:hover{color:var(--txt);border-color:var(--acc)}
+.row{display:flex;gap:14px;align-items:end;flex-wrap:wrap}.row>*{flex:1;min-width:140px}
+.trend{padding:14px 16px;border-bottom:1px solid var(--line);cursor:pointer;
+border-radius:8px;transition:background .15s}
 .trend:hover{background:#1a2130}.trend small{color:var(--dim)}
-video{width:270px;border-radius:12px;border:1px solid var(--line)}
-.proj{display:flex;gap:16px;align-items:center;padding:14px;
-border-bottom:1px solid var(--line)}
-.badge{font-size:12px;padding:3px 10px;border-radius:20px;background:#1a2130;
-color:var(--dim)}.badge.ok{background:#052e16;color:var(--grn)}
-.log{font-family:monospace;font-size:13px;color:var(--dim);white-space:pre-wrap}
-.stat{display:inline-block;margin-right:28px}.stat b{font-size:26px;
-display:block}.stat span{color:var(--dim);font-size:13px}
-.platgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
-.pcard{background:#0b0e14;border:1px solid var(--line);border-radius:10px;
-padding:14px;cursor:pointer;transition:border-color .15s}
-.pcard.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
-.pcard.off{opacity:.55;cursor:not-allowed}
-.pcard h4{margin:0 0 6px;font-size:15px;display:flex;align-items:center;gap:8px}
-.pcard .st{font-size:12px;padding:2px 9px;border-radius:12px}
+video{width:280px;border-radius:var(--r);border:1px solid var(--line);box-shadow:var(--shadow)}
+.proj{display:flex;gap:18px;align-items:center;padding:16px;
+border-bottom:1px solid var(--line);border-radius:10px;transition:background .15s}
+.proj:hover{background:#ffffff06}
+.badge{font-size:11.5px;font-weight:600;padding:4px 11px;border-radius:20px;
+background:#1a2130;color:var(--dim);letter-spacing:.02em}
+.badge.ok{background:#052e16;color:var(--grn)}
+.log{font-family:ui-monospace,monospace;font-size:13px;color:var(--dim);
+white-space:pre-wrap;line-height:1.7}
+.log b{color:var(--txt)}
+.stat{display:inline-block;margin:0 34px 8px 0}.stat b{font-size:30px;
+display:block;font-weight:800;letter-spacing:-.02em;
+background:linear-gradient(180deg,#fff,#aab4c8);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.stat span{color:var(--dim);font-size:13px}
+.platgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.pcard{background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+padding:18px;cursor:pointer;transition:all .18s}
+.pcard:hover:not(.off){border-color:var(--line2);transform:translateY(-2px)}
+.pcard.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),0 4px 16px #f9731630}
+.pcard.off{opacity:.5;cursor:not-allowed}
+.pcard h4{margin:0 0 8px;font-size:15px;display:flex;align-items:center;gap:8px}
+.pcard .st{font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:12px}
 .st.ready{background:#052e16;color:var(--grn)}
 .st.needs_auth{background:#451a03;color:#fdba74}
 .st.needs_setup{background:#1a2130;color:var(--dim)}
-.pcard small{color:var(--dim);font-size:12px}
+.pcard small{color:var(--dim);font-size:12.5px;line-height:1.6}
 .pcard input{width:auto;margin-right:8px}
-.res{padding:10px 12px;border-radius:8px;margin-bottom:8px;font-size:14px}
+.res{padding:12px 14px;border-radius:10px;margin-bottom:10px;font-size:14px}
 .res.ok{background:#052e16;border:1px solid #14532d}
 .res.err{background:#2a0a0a;border:1px solid #7f1d1d}
 .res a{color:#7dd3fc}
-.hero{background:linear-gradient(135deg,#1a0f2e,#0f2027);border:1px solid #f9731640}
-.hero h2{margin:0 0 10px;font-size:24px}.hero h2 span{color:var(--acc)}
-.hero p{color:var(--dim);line-height:1.6;margin:0 0 14px;max-width:640px}
+.hero{background:linear-gradient(135deg,#1c1030 0%,#0f1f2e 60%,#0a0d13 100%);
+border:1px solid #f9731640;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;
+background:radial-gradient(600px 200px at 20% 0%,#f9731620,transparent);pointer-events:none}
+.hero h2{margin:0 0 12px;font-size:26px;font-weight:800;letter-spacing:-.02em;position:relative}
+.hero h2 span{background:var(--grad);-webkit-background-clip:text;
+background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--dim);line-height:1.7;margin:0 0 16px;max-width:660px;position:relative}
 .hero p b{color:var(--txt)}
-button.ghost{background:none;border:1px solid var(--line);color:var(--dim);
-border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer}
-button.ghost:hover{color:var(--txt);border-color:var(--acc)}
-.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
-.tcard{background:#0b0e14;border:1px solid var(--line);border-radius:10px;
-padding:16px;cursor:pointer;transition:all .15s}
-.tcard:hover{border-color:var(--acc);transform:translateY(-2px)}
-.tcard .emo{font-size:28px;margin-bottom:8px}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.tcard{background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+padding:18px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.tcard::after{content:"";position:absolute;inset:0;opacity:0;transition:opacity .2s;
+background:radial-gradient(300px 120px at 50% 0%,#f9731618,transparent)}
+.tcard:hover{border-color:var(--acc);transform:translateY(-3px);
+box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.tcard:hover::after{opacity:1}
+.tcard .emo{font-size:30px;margin-bottom:10px}
 .tcard h4{margin:0 0 6px;font-size:15px}
-.tcard p{margin:0;color:var(--dim);font-size:12.5px;line-height:1.5}
-.tcard .use{margin-top:10px;font-size:13px;color:var(--acc);font-weight:600}
-.apistat{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.tcard p{margin:0;color:var(--dim);font-size:12.5px;line-height:1.55}
+.tcard .use{margin-top:12px;font-size:13px;color:var(--acc2);font-weight:700}
+.apistat{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 .apistat .badge{cursor:default}
-h3 .sub{font-weight:400;font-size:13px;color:var(--dim);margin-left:8px}
+h3 .sub{font-weight:500;font-size:13px;color:var(--dim);margin-left:10px}
+@media(max-width:640px){header,nav,main{padding-left:16px;padding-right:16px}
+.hero h2{font-size:21px}.tgrid{grid-template-columns:1fr 1fr}}
 </style></head><body>
-<header><h1>⚒️ Reel<span>Forge</span> Studio</h1></header>
+<header><h1>⚒️ Reel<span>Forge</span> Studio</h1><span class="tag">v0.2.0</span></header>
 <nav>
 <button class="on" onclick="tab('studio')">🎬 Studio</button>
 <button onclick="tab('trends')">📈 Trends</button>
@@ -318,13 +414,14 @@ h3 .sub{font-weight:400;font-size:13px;color:var(--dim);margin-left:8px}
 <button onclick="tab('publish')">🚀 Publish</button>
 <button onclick="tab('stats')">📊 Stats</button>
 <button onclick="tab('settings')">⚙️ Settings</button>
+<button onclick="tab('lyrics')">🎵 Lyrics</button>
 </nav><main>
 <div id="t-studio" class="tab on">
  <div class="panel hero" id="welcome">
   <h2>Turn any idea into a viral short. <span>Free, forever.</span></h2>
   <p>Pick a template below, or describe your own topic. ReelForge writes the script,
   narrates it, finds the footage, adds karaoke captions, and renders a 1080×1920
-  video — then publishes it to 8 platforms in one click. <b>10 languages</b> supported.</p>
+  video — then publishes it to 8 platforms in one click. <b>50 languages</b> supported.</p>
   <button class="ghost" onclick="document.getElementById('welcome').style.display='none'">Got it — hide this</button>
  </div>
  <div class="panel"><h3>🎨 Start from a template</h3>
@@ -338,22 +435,12 @@ h3 .sub{font-weight:400;font-size:13px;color:var(--dim);margin-left:8px}
    <div style="max-width:150px"><label>Language</label>
     <select id="lang">
      <option value="en">English</option>
-     <option value="ur">Urdu</option>
-     <option value="ur-roman">Urdu (Roman)</option>
-     <option value="hi">Hindi</option>
-     <option value="hi-roman">Hindi (Roman)</option>
-     <option value="ar">Arabic</option>
-     <option value="es">Spanish</option>
-     <option value="fr">French</option>
-     <option value="de">German</option>
-     <option value="pt">Portuguese</option>
-     <option value="zh">Chinese</option>
     </select></div>
    <div style="max-width:150px"><label>&nbsp;</label><br>
     <button class="go" id="genbtn" onclick="generate()">Forge ⚒️</button></div>
   </div>
   <p class="log" id="genlog"></p>
-  <p class="log" style="margin-top:8px">🌍 <b>10 languages, one click.</b> Pick Urdu, Hindi, Chinese, Arabic, Spanish… and ReelForge
+  <p class="log" style="margin-top:8px">🌍 <b>50 languages, one click.</b> Pick Urdu, Hindi, Chinese, Arabic, Spanish… and ReelForge
   dubs the entire video — native human-like voice, translated captions, RTL-correct. No other free tool does this.</p>
   <div class="apistat" id="apistat"></div>
  </div>
@@ -393,8 +480,25 @@ h3 .sub{font-weight:400;font-size:13px;color:var(--dim);margin-left:8px}
 </div>
 <div id="t-stats" class="tab"><div class="panel"><h3>Studio stats</h3>
  <div id="statlist"></div></div></div>
+<div id="t-lyrics" class="tab">
+ <div class="panel"><h3>🎵 Lyrics video <span class="sub">karaoke-style, word-by-word</span></h3>
+  <p class="log">Paste lyrics — one line per screen. ReelForge times each line across
+  the video, highlights words karaoke-style, and renders over cinematic footage with music.</p>
+  <div style="margin-bottom:12px"><label>Song title</label>
+   <input id="lyr_title" placeholder="e.g. Midnight Dreams"></div>
+  <div style="margin-bottom:12px"><label>Lyrics (one line per screen)</label>
+   <textarea id="lyr_text" rows="8" placeholder="Line one of the song&#10;Line two of the song&#10;..."></textarea></div>
+  <div class="row">
+   <div style="max-width:120px"><label>Seconds</label>
+    <input id="lyr_dur" type="number" value="30" min="5" max="180"></div>
+   <div style="max-width:200px"><label>&nbsp;</label><br>
+    <button class="go" id="lyrbtn" onclick="generateLyrics()">Create lyrics video 🎵</button></div>
+  </div>
+  <p class="log" id="lyrlog"></p>
+ </div>
+</div>
 <div id="t-settings" class="tab">
- <div class="panel"><h3>⚙️ Settings <span class="sub">API keys unlock real footage, AI scripts & AI visuals</span></h3>
+ <div class="panel"><h3>⚙️ Settings <span class="sub">every API ReelForge uses, in one place</span></h3>
   <p class="log">Keys are stored in a <b>.env</b> file next to the app — never shown back, never uploaded anywhere.</p>
   <div id="keyform"></div>
   <div style="margin-top:14px"><button class="go" onclick="saveSettings()">Save keys</button>
@@ -424,7 +528,23 @@ document.querySelectorAll('nav button').forEach(e=>e.classList.remove('on'));
 event.target.classList.add('on');
 if(n==='library')loadProjects();if(n==='stats')loadStats();
 if(n==='trends')loadTrends();if(n==='publish')loadPublish();
-if(n==='settings')loadSettings();}
+if(n==='settings')loadSettings();
+if(n==='lyrics')loadLanguages();}
+async function generateLyrics(){
+ const lyrics=document.getElementById('lyr_text').value.trim();
+ const title=document.getElementById('lyr_title').value.trim();
+ const duration=parseInt(document.getElementById('lyr_dur').value)||30;
+ const log=document.getElementById('lyrlog');const btn=document.getElementById('lyrbtn');
+ if(!lyrics){log.textContent='❌ Paste some lyrics first.';return;}
+ btn.disabled=true;log.textContent='🎵 Rendering your lyrics video… (a minute or two)';
+ try{
+  const r=await fetch('/api/lyrics',{method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({lyrics,title,duration})});
+  const j=await r.json();
+  log.innerHTML=j.ok?('✅ Done! Find it in the <b>Library</b> tab.'):'❌ '+friendlyError(j);
+ }catch(e){log.textContent='❌ '+friendlyError(e);}
+ btn.disabled=false;
+}
 const TEMPLATES=[
  {emo:"🔥",name:"Motivation",topic:"5 brutal truths about success nobody tells you",dur:30,desc:"Punchy mindset content. High retention, high shares."},
  {emo:"🍜",name:"Food",topic:"hyderabadi biryani recipe secrets",dur:35,desc:"Recipe reveals and food stories that make mouths water."},
@@ -559,6 +679,15 @@ async function loadStats(){
    <div class="stat"><b>${s.platforms.length}</b><span>platforms</span></div>
    <p class="log" style="margin-top:14px">Platforms: ${s.platforms.join(', ')}</p>`;}
 renderTemplates();
+async function loadLanguages(){
+ try{
+  const r=await fetch('/api/languages');const j=await r.json();
+  const sel=document.getElementById('lang');
+  j.languages.forEach(l=>{
+   const o=document.createElement('option');o.value=l.code;o.textContent=l.name;sel.appendChild(o);});
+ }catch(e){}
+}
+loadLanguages();
 async function loadApiStatus(){
  try{
   const r=await fetch('/api/status');const j=await r.json();
@@ -569,10 +698,12 @@ async function loadApiStatus(){
 loadApiStatus();
 async function loadSettings(){
  const r=await fetch('/api/settings');const j=await r.json();
- document.getElementById('keyform').innerHTML=j.keys.map(k=>
+ document.getElementById('keyform').innerHTML=j.groups.map(g=>
+  `<h4 style="margin:18px 0 4px">${g.name} <span class="sub">${g.desc}</span></h4>`+
+  g.keys.map(k=>
   `<div style="margin-bottom:12px"><label>${k.label} ${k.set?'<span class="badge ok">set</span>':'<span class="badge">not set</span>'}</label>
    <input type="password" id="key_${k.key}" placeholder="${k.set?'•••••• (enter new to replace)':'Paste key here'}" autocomplete="off">
-   <p class="log" style="margin:4px 0 0">${k.hint}</p></div>`).join('');
+   <p class="log" style="margin:4px 0 0">${k.hint}</p></div>`).join('')).join('');
 }
 async function saveSettings(){
  const keys={};

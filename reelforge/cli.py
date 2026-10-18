@@ -324,6 +324,18 @@ def version():
 
 
 @app.command()
+def lyrics(lyrics_file: str = typer.Argument(..., help="Text file with lyrics (one line per screen)"),
+           title: str = typer.Option("", help="Video title (defaults to first line)"),
+           duration: int = typer.Option(30, help="Target seconds (5-180)")):
+    """Render a karaoke-style lyrics video from a text file."""
+    from pathlib import Path as _P
+    cfg = _cfg()
+    text = _P(lyrics_file).read_text(encoding="utf-8")
+    workdir = pipeline.create_lyrics_project(text, title, duration, cfg)
+    console.print(f"[bold green]🎵 Lyrics video ready:[/bold green] {workdir}")
+
+
+@app.command()
 def update():
     """Pull the latest ReelForge from GitHub and reinstall. Keeps your config."""
     import subprocess

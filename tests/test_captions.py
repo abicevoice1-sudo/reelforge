@@ -239,9 +239,9 @@ def test_linkedin_pinterest_dry_run():
 
 
 def test_dub_language_map():
-    """Dubbing supports 10 language options with native neural voices."""
+    """Dubbing supports 50 language options with native neural voices."""
     from reelforge.voice import DUB_LANGUAGES, SAMPLE_VOICES
-    assert len(DUB_LANGUAGES) == 10
+    assert len(DUB_LANGUAGES) == 50
     for lang in DUB_LANGUAGES:
         assert SAMPLE_VOICES[lang], f"no voices for {lang}"
 

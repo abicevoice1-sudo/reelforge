@@ -132,6 +132,70 @@ def _finish_project(plan: EditPlan, workdir: Path, audio_paths: list[Path],
     return final
 
 
+def create_lyrics_project(lyrics: str, title: str = "", duration: int = 30,
+                        cfg: Config | None = None) -> Path:
+    """Render a karaoke-style lyrics video. Each line gets screen time
+    weighted by word count; words highlight in sync across the duration.
+    No narration — background music carries the audio."""
+    from .schemas import EditPlan, Scene
+    cfg = cfg or Config()
+    ensure_home()
+    edit.render_quiet_check()
+
+    lines = [ln.strip() for ln in lyrics.splitlines() if ln.strip()]
+    if not lines:
+        raise ValueError("No lyrics provided")
+    title = title.strip() or lines[0][:60]
+    slug = slugify("lyrics-" + title)
+    workdir = project_dir(slug)
+    workdir.mkdir(parents=True, exist_ok=True)
+
+    total_words = sum(len(ln.split()) for ln in lines)
+    scenes = []
+    for i, ln in enumerate(lines[:12], 1):
+        share = len(ln.split()) / total_words
+        dur = max(2.0, min(30.0, duration * share))
+        scenes.append(Scene(id=i, voiceover=ln, on_screen_text=ln,
+                            stock_query=f"music concert stage lights {title[:30]}",
+                            duration=dur, transition="cut"))
+    plan = EditPlan(title=title, hook=lines[0][:140], description="",
+                    hashtags=["lyrics", "lyricvideo"],
+                    scenes=scenes, music_mood="upbeat", cta="")
+    (workdir / "plan.json").write_text(plan.model_dump_json(indent=2))
+
+    with Progress(SpinnerColumn(), TextColumn("{task.description}"),
+                  console=console) as prog:
+        t = prog.add_task("Fetching footage…", total=None)
+        stock.fetch_plan_stock(plan, workdir, cfg)
+        prog.update(t, description="Footage ready")
+
+        t = prog.add_task("Writing lyrics captions…", total=None)
+        words: list[captions_mod.Word] = []
+        offset = 0.0
+        for scene in plan.scenes:
+            words.extend(captions_mod.distribute_words(scene, scene.duration, offset))
+            offset += scene.duration
+        captions_ass = captions_mod.build_ass(
+            words, workdir / "captions.ass", style="lyrics",
+            fontsize=72, width=cfg.get("width"), height=cfg.get("height"))
+
+        t = prog.add_task("Rendering 1080x1920…", total=None)
+        track = music.pick_track("upbeat", cfg) or music.ensure_library(cfg)
+        track = music.pick_track("upbeat", cfg)
+        clips = sorted((workdir / "clips").glob("scene_*.mp4"))
+        final = edit.render(plan, clips, [], captions_ass, words,
+                            workdir, music_track=track, cfg=cfg)
+        prog.update(t, description="Done")
+
+    (workdir / "meta.json").write_text(json.dumps({
+        "topic": title, "slug": slug, "duration": duration, "type": "lyrics",
+        "created_at": datetime.now().isoformat(),
+        "final": str(final), "seconds": voice.probe_duration(final),
+    }, indent=2))
+    console.print(f"[green]✓ Lyrics video ready:[/green] {final}")
+    return workdir
+
+
 def resume_project(slug: str, cfg: Config | None = None) -> Path:
     """Resume a project that failed partway: only missing stages re-run."""
     cfg = cfg or Config()

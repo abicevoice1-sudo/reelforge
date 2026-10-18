@@ -124,7 +124,8 @@ on your Desktop + Start Menu:
 curl -L -o "%TEMP%\rf-install.cmd" "https://raw.githubusercontent.com/abicevoice1-sudo/reelforge/main/install.cmd" && "%TEMP%\rf-install.cmd"
 ```
 
-**Linux / macOS:**
+**Linux / macOS / Git Bash (Windows)** — one line, works everywhere including
+Git Bash on Windows:
 ```bash
 curl -fsSL "https://raw.githubusercontent.com/abicevoice1-sudo/reelforge/main/install.sh" | bash
 ```
