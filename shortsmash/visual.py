@@ -7,6 +7,11 @@ Providers (`visual_provider` in config, default "stock"):
            Needs a free API key from https://platform.agnes-ai.com saved
            in the Secure Vault (provider "agnes"). Each scene's cinematic
            shot list becomes a real AI clip.
+  veo    — Google Veo 3.1 (paid, best quality, native audio). Needs
+           GEMINI_API_KEY from a billing-enabled Google Cloud project.
+           Config: veo_model (veo-3.1-fast-generate-preview default).
+  kling  — Kling AI (paid, top-tier motion). Needs KLING_ACCESS_KEY +
+           KLING_SECRET_KEY from kling.ai/dev/api-key.
   custom — your own generator: set `visual_command` to a shell template
            that turns a prompt into an mp4, e.g. a ComfyUI workflow,
            a Replicate call, or MiniMax/Seedance via their APIs.
@@ -35,6 +40,12 @@ def fetch(query: str, out: Path, cfg: Config, seed: int = 0,
     if provider == "agnes":
         from . import agnes
         return agnes.generate(query, out, cfg, duration=duration)
+    if provider == "veo":
+        from . import veo
+        return veo.generate(query, out, cfg, duration=duration)
+    if provider == "kling":
+        from . import kling
+        return kling.generate(query, out, cfg, duration=duration)
     from . import stock
     return stock.fetch_stock(query, out, cfg, seed=seed, context=context)
 

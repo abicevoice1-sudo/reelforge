@@ -88,13 +88,33 @@ def job_status(job_id: str):
 
 _SETTING_KEYS = [
     ("PIXABAY_API_KEY", "Pixabay", "Real stock footage (free key at pixabay.com/api)"),
-    ("GEMINI_API_KEY", "Gemini", "AI scripts + footage checks (free at aistudio.google.com)"),
+    ("GEMINI_API_KEY", "Gemini", "AI scripts + footage checks (free) — also powers Veo 3.1 video (paid, needs billing)"),
     ("NVIDIA_API_KEY", "NVIDIA NIM", "Backup AI scripts (free at build.nvidia.com)"),
+    ("XAI_API_KEY", "Grok (xAI)", "Alternative AI scripts (key at console.x.ai)"),
     ("AGNES_API_KEY", "Agnes AI", "AI-generated video clips (free at platform.agnes-ai.com)"),
+    ("KLING_ACCESS_KEY", "Kling Access Key", "Kling AI video (paid, at kling.ai/dev/api-key)"),
+    ("KLING_SECRET_KEY", "Kling Secret Key", "Kling signing secret (shown once — save it)"),
 ]
 
 # Step-by-step connection guides shown in Settings. Top-in-world = no doc-hunting.
 _CONNECT_GUIDES = {
+    "grok": [
+        "Go to <b>console.x.ai</b> → sign in → API keys → create one.",
+        "Paste it below as Grok (xAI). Then set <b>llm_provider: grok</b> in config.",
+        "Optional: <b>grok_model</b> picks the model (default grok-4-1-fast).",
+    ],
+    "veo": [
+        "Veo 3.1 runs on your <b>Gemini API key</b> — no separate key exists.",
+        "Create the key at aistudio.google.com in a project <b>with billing enabled</b> (Veo is paid-only; no free tier).",
+        "Paste it as Gemini below, then set <b>visual_provider: veo</b> in config.",
+        "Optional: <b>veo_model</b> — veo-3.1-fast-generate-preview (default), veo-3.1-generate-preview (best), or veo-3.1-lite-generate-preview (cheapest).",
+    ],
+    "kling": [
+        "Sign up at <b>kling.ai</b> → open <b>kling.ai/dev/api-key</b>.",
+        "Click <b>Create a new API Key</b> — copy the Access Key <b>and</b> the Secret Key (secret shows only once).",
+        "Paste both below, then set <b>visual_provider: kling</b> in config.",
+        "Optional: <b>kling_model</b> (default kling-v2-1), <b>kling_duration</b> 5 or 10.",
+    ],
     "facebook": [
         "Go to developers.facebook.com → create an app (Business type).",
         "Add the Facebook Login product; request <b>publish_video</b> permission.",
@@ -152,9 +172,12 @@ _CONNECT_GUIDES = {
 _SETTING_GROUPS = [
     ("🎬 Video Generation", "APIs needed to MAKE videos", [
         ("PIXABAY_API_KEY", "Pixabay", "Real stock footage (free key at pixabay.com/api)"),
-        ("GEMINI_API_KEY", "Gemini", "AI scripts + footage checks (free at aistudio.google.com)"),
+        ("GEMINI_API_KEY", "Gemini", "AI scripts + footage checks (free) — also powers Veo 3.1 video (paid, needs billing)"),
         ("NVIDIA_API_KEY", "NVIDIA NIM", "Backup AI scripts (free at build.nvidia.com)"),
+        ("XAI_API_KEY", "Grok (xAI)", "Alternative AI scripts (key at console.x.ai)"),
         ("AGNES_API_KEY", "Agnes AI", "AI-generated video clips (free at platform.agnes-ai.com)"),
+        ("KLING_ACCESS_KEY", "Kling Access Key", "Kling AI video (paid, at kling.ai/dev/api-key)"),
+        ("KLING_SECRET_KEY", "Kling Secret Key", "Kling signing secret (shown once — save it)"),
     ]),
     ("📢 Publishing", "APIs needed to POST videos (connect your socials)", [
         ("TIKTOK_ACCESS_TOKEN", "TikTok", "Access token (see docs/setup-tiktok.md)"),
@@ -286,6 +309,9 @@ def api_lyrics(req: LyricsRequest):
 
 
 _KEY_GUIDE = {
+    "XAI_API_KEY": "grok",
+    "KLING_ACCESS_KEY": "kling", "KLING_SECRET_KEY": "kling",
+    "GEMINI_API_KEY": "veo",
     "FB_ACCESS_TOKEN": "facebook",
     "FB_PAGE_ID": "facebook_page", "FB_PAGE_ACCESS_TOKEN": "facebook_page",
     "TIKTOK_ACCESS_TOKEN": "tiktok",

@@ -39,8 +39,6 @@ threads = ["httpx>=0.25"]
 
 [project.scripts]
 shortsmash = "shortsmash.cli:app"
-# Backwards-compat alias for the old name.
-reelforge = "shortsmash.cli:app"
 
 [build-system]
 requires = ["hatchling"]

@@ -7,6 +7,41 @@
 Pixabay footage, every clip verified by the two-stage vision gate
 (local CLIP + Gemini). Costs nothing.
 
+## agnes (free)
+
+Agnes AI text-to-video — genuinely free tier, no GPU or card needed.
+Free signup at platform.agnes-ai.com, save the key, set
+`visual_provider: agnes`. Note: the free queue fills at peak hours;
+ShortSmash retries with backoff.
+
+## veo (paid — best quality)
+
+Google Veo 3.1, the same engine behind Google Flow (Flow has no public
+API; this is the API path to the same models). Native audio, 4/6/8s
+clips, superb prompt adherence.
+
+```yaml
+visual_provider: veo
+veo_model: veo-3.1-fast-generate-preview  # or veo-3.1-generate-preview (best), veo-3.1-lite-generate-preview (cheapest)
+```
+
+Needs `GEMINI_API_KEY` from aistudio.google.com in a project **with
+billing enabled** — Veo is paid-only, no free tier. Pricing is per
+second of generated video.
+
+## kling (paid — top-tier motion)
+
+Kling AI text-to-video, famous for motion quality. 5s/10s clips.
+
+```yaml
+visual_provider: kling
+kling_model: kling-v2-1
+kling_duration: 5  # or 10
+```
+
+Needs `KLING_ACCESS_KEY` + `KLING_SECRET_KEY` from kling.ai/dev/api-key
+(the secret shows only once — save it).
+
 ## custom (bring your own generator)
 
 Point ShortSmash at any text-to-video system — ComfyUI, Replicate,
