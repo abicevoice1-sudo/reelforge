@@ -154,10 +154,10 @@ printf '🚀 Publish tab to post it to 10 platforms in one click.\n'
 printf '\033[1;32m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n'
 
 # Offer to start the server now. Read from /dev/tty so this works under
-# `curl ... | bash`, where stdin is the script itself. The writability
-# probe skips the prompt entirely when there is no controlling terminal
+# `curl ... | bash`, where stdin is the script itself. The brace-group
+# probe skips the prompt silently when there is no controlling terminal
 # (CI, detached runs) — safe under `set -e` because it is an if-condition.
-if printf '' > /dev/tty 2>/dev/null; then
+if { : < /dev/tty; } 2>/dev/null; then
   printf '\n  Start ShortSmash Studio now? [Y/n] ' > /dev/tty
   read -r _launch < /dev/tty || _launch=""
   case "$_launch" in
