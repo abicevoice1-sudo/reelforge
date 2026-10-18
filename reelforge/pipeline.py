@@ -116,7 +116,8 @@ def _finish_project(plan: EditPlan, workdir: Path, audio_paths: list[Path],
             words, workdir / "captions.ass", style=cfg.get("caption_style"),
             fontsize=cfg.get("caption_fontsize"),
             width=cfg.get("width"), height=cfg.get("height"),
-            overlays=captions_mod.plan_overlays(plan, offset))
+            overlays=(captions_mod.plan_overlays(plan, offset)
+                      if cfg.get("caption_overlays", False) else None))
 
         t = prog.add_task("Rendering 1080x1920…", total=None)
         track = music.pick_track(plan.music_mood, cfg)
