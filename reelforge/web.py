@@ -29,6 +29,7 @@ _jobs: dict[str, dict] = {}
 class GenRequest(BaseModel):
     topic: str
     duration: int = 30
+    language: str = "en"
 
 
 class TrendRequest(BaseModel):
@@ -42,14 +43,20 @@ class PublishRequest(BaseModel):
     dry_run: bool = True
 
 
-def _run_generation(job_id: str, topic: str, duration: int):
+def _run_generation(job_id: str, topic: str, duration: int, language: str = "en"):
     _jobs[job_id] = {"status": "running", "topic": topic, "started": time.time()}
     try:
         cfg = Config()
         workdir = pipeline.create_project(topic, duration, cfg)
-        _jobs[job_id] = {"status": "done", "slug": workdir.name,
+        slug = workdir.name
+        if language and language != "en":
+            _jobs[job_id]["status"] = "dubbing"
+            from reelforge import dub as dub_mod
+            dub_mod.dub_project(slug, language, cfg)
+            slug = f"{slug}-dub-{language}"
+        _jobs[job_id] = {"status": "done", "slug": slug,
                          "topic": topic,
-                         "video_url": f"/api/video/{workdir.name}"}
+                         "video_url": f"/api/video/{slug}"}
     except Exception as e:  # noqa: BLE001
         _jobs[job_id] = {"status": "failed", "topic": topic, "error": str(e)}
 
@@ -58,7 +65,8 @@ def _run_generation(job_id: str, topic: str, duration: int):
 def generate(req: GenRequest):
     job_id = uuid.uuid4().hex[:8]
     t = threading.Thread(target=_run_generation,
-                         args=(job_id, req.topic, req.duration), daemon=True)
+                         args=(job_id, req.topic, req.duration, req.language),
+                         daemon=True)
     t.start()
     return {"job_id": job_id}
 
@@ -198,9 +206,22 @@ padding:14px;cursor:pointer;transition:border-color .15s}
  <div class="panel"><h3>New video</h3>
   <div class="row">
    <div><label>Topic</label><input id="topic" placeholder="hyderabadi biryani"></div>
-   <div style="max-width:140px"><label>Seconds</label>
+   <div style="max-width:120px"><label>Seconds</label>
     <input id="dur" type="number" value="30" min="5" max="180"></div>
-   <div style="max-width:170px"><label>&nbsp;</label><br>
+   <div style="max-width:150px"><label>Language</label>
+    <select id="lang">
+     <option value="en">English</option>
+     <option value="ur">Urdu</option>
+     <option value="ur-roman">Urdu (Roman)</option>
+     <option value="hi">Hindi</option>
+     <option value="hi-roman">Hindi (Roman)</option>
+     <option value="ar">Arabic</option>
+     <option value="es">Spanish</option>
+     <option value="fr">French</option>
+     <option value="de">German</option>
+     <option value="pt">Portuguese</option>
+    </select></div>
+   <div style="max-width:150px"><label>&nbsp;</label><br>
     <button class="go" id="genbtn" onclick="generate()">Forge ⚒️</button></div>
   </div>
   <p class="log" id="genlog"></p>
@@ -249,13 +270,29 @@ document.querySelectorAll('nav button').forEach(e=>e.classList.remove('on'));
 event.target.classList.add('on');
 if(n==='library')loadProjects();if(n==='stats')loadStats();
 if(n==='trends')loadTrends();if(n==='publish')loadPublish();}
+function friendlyError(e){
+ if(!e) return 'Something went wrong.';
+ if(/non-zero exit status|ffmpeg/i.test(e)){
+  if(/fontfile|drawtext|vignette|gradients/i.test(e))
+   return 'Video renderer crashed (usually a font or filter issue on Windows). Try again — if it repeats, run `reelforge doctor`.';
+  return 'Video rendering failed. Run `reelforge doctor` to check ffmpeg.';
+ }
+ if(/pixabay|pexels|api key|401|403/i.test(e))
+  return 'Stock footage API issue — check your API key, or the video will use placeholder visuals.';
+ if(/edge-tts|piper|tts|voice/i.test(e))
+  return 'Voice generation failed — check your internet or voice setup.';
+ if(/gemini|llm|nvidia|429|quota/i.test(e))
+  return 'AI script service is busy or out of quota — try again in a few minutes.';
+ return e.length>200 ? e.slice(0,200)+'…' : e;
+}
 async function generate(){
  const topic=document.getElementById('topic').value.trim();
  if(!topic){alert('Enter a topic');return;}
  const btn=document.getElementById('genbtn');btn.disabled=true;
  const log=document.getElementById('genlog');log.textContent='Forging… (script → voice → verified footage → captions → render)';
+ const lang=document.getElementById('lang').value;
  const r=await fetch('/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({topic,duration:+document.getElementById('dur').value})});
+  body:JSON.stringify({topic,duration:+document.getElementById('dur').value,language:lang})});
  const {job_id}=await r.json();
  const iv=setInterval(async()=>{
   const s=await (await fetch('/api/jobs/'+job_id)).json();
@@ -263,7 +300,8 @@ async function generate(){
    log.innerHTML='✅ Done: <b>'+s.slug+'</b> — see Library to preview & publish.';
    loadProjects();}
   else if(s.status==='failed'){clearInterval(iv);btn.disabled=false;
-   log.textContent='❌ '+s.error;}
+   log.innerHTML='❌ '+friendlyError(s.error);}
+  else if(s.status==='dubbing'){log.textContent='Dubbing into '+document.getElementById('lang').selectedOptions[0].text+'…';}
  },3000);}
 async function loadTrends(){
  const niche=document.getElementById('niche').value;

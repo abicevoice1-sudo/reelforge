@@ -338,10 +338,25 @@ def generate_placeholder(query: str, out: Path, duration: float = 8.0,
     rng = random.Random(seed if seed is not None else abs(hash(query)) % 10**6)
     c1, c2, c3 = rng.choice(_PALETTES)
     w, h = 720, 1280
+    # drawtext needs an explicit fontfile on Windows (no fontconfig default —
+    # it segfaults otherwise). Escape for FFmpeg filter syntax.
+    font_opt = ""
+    if os.name == "nt":
+        for candidate in (
+            r"C:\Windows\Fonts\arial.ttf",
+            r"C:\Windows\Fonts\calibri.ttf",
+        ):
+            if os.path.exists(candidate):
+                # FFmpeg filter escaping: forward slashes, escaped colon
+                esc = candidate.replace("\\", "/").replace(":", r"\:")
+                font_opt = f":fontfile='{esc}'"
+                break
+    # Sanitize query text for drawtext (quotes/colons break the filter)
+    safe_q = query[:28].replace("'", "").replace(":", " -")
     vf = (
         f"gradients=s={w}x{h}:c0={c1[1:]}:c1={c2[1:]}:c2={c3[1:]}:speed=0.08,"
         f"vignette=PI/5,"
-        f"drawtext=text='{query[:28]}':fontcolor=white@0.25:fontsize=36:"
+        f"drawtext=text='{safe_q}':fontcolor=white@0.25:fontsize=36{font_opt}:"
         f"x=(w-text_w)/2:y=(h-text_h)/2"
     )
     subprocess.run(

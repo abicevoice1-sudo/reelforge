@@ -148,7 +148,20 @@ echo  ============================================
 echo   ReelForge is ready!
 echo  ============================================
 echo.
-echo   Next time, just run:
+set /p RUNNOW="  Start the Studio server now? [Y/n]: "
+if /i "%RUNNOW%"=="n" goto :skipserver
+if /i "%RUNNOW%"=="no" goto :skipserver
+echo.
+echo  [*] Starting ReelForge Studio...
+echo      Open http://127.0.0.1:8000 in your browser.
+echo      Press Ctrl+C in this window to stop the server.
+echo.
+".venv\Scripts\reelforge" serve
+goto :end
+
+:skipserver
+echo.
+echo   When you're ready, run:
 echo.
 echo     .venv\Scripts\activate
 echo     reelforge serve
@@ -159,3 +172,5 @@ echo   Make a video from the Studio dashboard, then use
 echo   the Publish tab to post it everywhere in one click.
 echo.
 pause
+
+:end
