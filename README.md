@@ -93,7 +93,7 @@ prompt ──▶ script ──▶ voice ──▶ visuals ──▶ captions ─
 | Batch production | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Karaoke word-level captions | ✅ | ✅ | ✅ | ❌ | ✅ |
 | Official publishing APIs | ✅ 8 platforms | ⚠️ Selenium for YT | ✅ | ✅ | ⚠️ |
-| Multi-language dubbing | ✅ 9 options (incl. Roman Urdu/Hindi) | ❌ | ❌ | ❌ | ✅ |
+| Multi-language dubbing | ✅ 10 options (incl. Roman Urdu/Hindi, Chinese) | ❌ | ❌ | ❌ | ✅ |
 | Real analytics pull | ✅ | ❌ | ❌ | ✅ | ❌ |
 | Web UI | ✅ Studio | ✅ | ✅ | ✅ | ✅ |
 | MCP server | ✅ | ❌ | ✅ | ✅ | ❌ |

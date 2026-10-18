@@ -1,6 +1,6 @@
 [project]
 name = "reelforge"
-version = "0.1.0"
+version = "0.2.0"
 description = "Prompt in. Viral short out. AI video studio: script, voice, stock, edit, captions, and official-API publishing to YouTube, TikTok, Instagram and X."
 readme = "README.md"
 license = { text = "MIT" }
