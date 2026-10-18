@@ -9,7 +9,7 @@
 
 **Prompt in. Viral short out.**
 
-ShortSmash is an AI video studio that takes one sentence — or today's trends — and ships a finished, captioned 9:16 short, then publishes it to YouTube, TikTok, Instagram, Threads, Bluesky, LinkedIn, Pinterest and X through their **official APIs**. Script, voiceover, *verified* stock footage, karaoke captions, music ducking, trend harvesting, batch production, scheduling and comment-reply drafts, all in one CLI. And an MCP server, so AI agents can drive the whole factory.
+ShortSmash is an AI video studio that takes one sentence — or today's trends — and ships a finished, captioned 9:16 short, then publishes it to YouTube, TikTok, Instagram, X, Threads, Bluesky, LinkedIn, Pinterest, and Facebook (profiles + Pages) through their **official APIs**. Script, voiceover, *verified* stock footage, karaoke captions, music ducking, trend harvesting, batch production, scheduling and comment-reply drafts, all in one CLI. And an MCP server, so AI agents can drive the whole factory.
 
 ```bash
 shortsmash trends food                    # what's hot right now (free, no keys)
@@ -75,18 +75,19 @@ ShortSmash is the first open-source pipeline with **eyes**:
 ```
 prompt ──▶ script ──▶ voice ──▶ visuals ──▶ captions ──▶ render ──▶ publish
            NVIDIA     Edge-TTS   Pixabay      faster-     FFmpeg      official
-           Gemini     Piper      CLIP         whisper     1080x1920   APIs only
-           OpenAI-    (offline   verified     karaoke     +faststart
-           compat     neural)
+           Gemini     Piper      Veo 3.1      whisper     1080x1920   APIs only
+           Grok       (offline   Kling        karaoke     +faststart
+           OpenAI-    neural)    Agnes
+           compat     50 langs   CLIP-verified
 ```
 
-- **Script** — NVIDIA NIM (free) → Gemini (free) → any OpenAI-compatible endpoint (OpenRouter, DeepSeek, local Ollama) → offline template. Writes a scroll-stopping script *and* a strict JSON edit plan, validated by pydantic. Second-person, punchy, 3–4s scenes.
-- **Voice** — Edge-TTS → Piper offline neural → gTTS fallback chain. Urdu/Hindi/Arabic voices included.
-- **Visuals** — free Pixabay footage, every clip verified by the vision gate. Prefer AI generation? Set `visual_provider: custom` with your own command (ComfyUI, Replicate, MiniMax…) — the gate still checks the result.
+- **Script** — NVIDIA NIM (free) → Gemini (free) → Grok → any OpenAI-compatible endpoint (OpenRouter, DeepSeek, local Ollama) → offline template. Writes a scroll-stopping script *and* a strict JSON edit plan, validated by pydantic. Second-person, punchy, 3–4s scenes.
+- **Voice** — Edge-TTS → Piper offline neural → gTTS fallback chain. 50 dub languages with native voices, Urdu/Hindi/Arabic included.
+- **Visuals** — free Pixabay footage *or* AI generation: Google Veo 3.1 (best quality, native audio), Kling AI (top-tier motion), Agnes AI (free tier) — every clip verified by the vision gate regardless of source. Prefer your own? Set `visual_provider: custom` with any command (ComfyUI, Replicate, MiniMax…).
 - **Captions** — faster-whisper word timestamps → burned-in **karaoke captions**.
 - **Render** — FFmpeg: 9:16 smart reframe, transitions, hook + CTA overlays, ducked music, H.264/AAC faststart.
 - **Publish** — YouTube, TikTok, Instagram, Threads, Bluesky, LinkedIn, Pinterest, X. Official APIs only — no Selenium, no scraping, nothing that gets accounts banned.
-- **Dub** — `shortsmash dub <slug> --lang ur` re-voices any video in Urdu, Hindi, Arabic, Spanish, French, German or Portuguese — plus `ur-roman` / `hi-roman` for Roman-script captions ("Tum kaise ho?") with the native neural voice. Urdu captions render in proper Nastaliq calligraphy, right-to-left, with the karaoke highlight tracking the spoken word. Same verified clips, new native narration.
+- **Dub** — `shortsmash dub <slug> --lang ur` re-voices any video in **50 languages** — Urdu, Hindi, Arabic, Spanish, French, German, Chinese, Portuguese and 42 more — plus `ur-roman` / `hi-roman` for Roman-script captions ("Tum kaise ho?") with the native neural voice. Urdu captions render in proper Nastaliq calligraphy, right-to-left, with the karaoke highlight tracking the spoken word. Same verified clips, new native narration.
 - **Analytics** — `shortsmash analytics` pulls real views/likes/comments from YouTube's API. Numbers from the platform, not vanity metrics.
 - **Trends** — `shortsmash trends <niche>` harvests Google News + Hacker News (free, no keys). `shortsmash batch` turns the top trends into videos unattended.
 - **Schedule** — natural language ("Friday 6pm"), durable SQLite queue, retrying worker.
@@ -99,6 +100,7 @@ prompt ──▶ script ──▶ voice ──▶ visuals ──▶ captions ─
 | | ShortSmash | MoneyPrinterTurbo | OpenPost | Postiz | ShortGPT |
 |---|---|---|---|---|---|
 | Prompt → finished short | ✅ | ✅ | ❌ (manual editor) | ❌ | ✅ |
+| Post your own video (validate + schedule) | ✅ | ❌ | ✅ | ✅ | ❌ |
 | Footage verification | ✅ CLIP + Gemini | ❌ | n/a | n/a | ❌ |
 | Offline neural voice fallback | ✅ Piper | ❌ | n/a | n/a | ❌ |
 | Audio safety gate | ✅ | ❌ | n/a | n/a | ❌ |
@@ -106,7 +108,7 @@ prompt ──▶ script ──▶ voice ──▶ visuals ──▶ captions ─
 | Batch production | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Karaoke word-level captions | ✅ | ✅ | ✅ | ❌ | ✅ |
 | Official publishing APIs | ✅ 10 platforms | ⚠️ Selenium for YT | ✅ | ✅ | ⚠️ |
-| Multi-language dubbing | ✅ 10 options (incl. Roman Urdu/Hindi, Chinese) | ❌ | ❌ | ❌ | ✅ |
+| Multi-language dubbing | ✅ 50 languages (incl. Roman Urdu/Hindi, Chinese) | ❌ | ❌ | ❌ | ✅ |
 | Real analytics pull | ✅ | ❌ | ❌ | ✅ | ❌ |
 | Web UI | ✅ Studio | ✅ | ✅ | ✅ | ✅ |
 | MCP server | ✅ | ❌ | ✅ | ✅ | ❌ |
