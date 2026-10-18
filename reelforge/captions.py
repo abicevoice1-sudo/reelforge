@@ -249,7 +249,8 @@ def build_plan_captions(plan: EditPlan, audio_paths: list[Path], workdir: Path,
     build_ass(all_words, out, style=cfg.get("caption_style"),
               fontsize=cfg.get("caption_fontsize"),
               width=cfg.get("width"), height=cfg.get("height"),
-              overlays=plan_overlays(plan, offset))
+              overlays=(plan_overlays(plan, offset)
+                        if cfg.get("caption_overlays", False) else None))
     if used_fallback:
         with open(out, "a", encoding="utf-8") as f:
             f.write("; NOTE: word timing is approximate (whisper unavailable)\n")
