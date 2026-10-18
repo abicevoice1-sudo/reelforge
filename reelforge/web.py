@@ -19,7 +19,7 @@ from pydantic import BaseModel
 from . import pipeline
 from . import trends as trends_mod
 from .config import PROJECTS_DIR, Config
-from .publish import ADAPTERS, publish as publish_adapter
+from .publish import ADAPTERS, platform_status, publish as publish_adapter
 
 app = FastAPI(title="ReelForge Studio")
 
@@ -110,6 +110,11 @@ def publish(req: PublishRequest):
     return results
 
 
+@app.get("/api/platforms")
+def platforms():
+    return platform_status()
+
+
 @app.get("/api/stats")
 def stats():
     projects = pipeline.list_projects()
@@ -164,12 +169,29 @@ color:var(--dim)}.badge.ok{background:#052e16;color:var(--grn)}
 .log{font-family:monospace;font-size:13px;color:var(--dim);white-space:pre-wrap}
 .stat{display:inline-block;margin-right:28px}.stat b{font-size:26px;
 display:block}.stat span{color:var(--dim);font-size:13px}
+.platgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.pcard{background:#0b0e14;border:1px solid var(--line);border-radius:10px;
+padding:14px;cursor:pointer;transition:border-color .15s}
+.pcard.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.pcard.off{opacity:.55;cursor:not-allowed}
+.pcard h4{margin:0 0 6px;font-size:15px;display:flex;align-items:center;gap:8px}
+.pcard .st{font-size:12px;padding:2px 9px;border-radius:12px}
+.st.ready{background:#052e16;color:var(--grn)}
+.st.needs_auth{background:#451a03;color:#fdba74}
+.st.needs_setup{background:#1a2130;color:var(--dim)}
+.pcard small{color:var(--dim);font-size:12px}
+.pcard input{width:auto;margin-right:8px}
+.res{padding:10px 12px;border-radius:8px;margin-bottom:8px;font-size:14px}
+.res.ok{background:#052e16;border:1px solid #14532d}
+.res.err{background:#2a0a0a;border:1px solid #7f1d1d}
+.res a{color:#7dd3fc}
 </style></head><body>
 <header><h1>⚒️ Reel<span>Forge</span> Studio</h1></header>
 <nav>
 <button class="on" onclick="tab('studio')">🎬 Studio</button>
 <button onclick="tab('trends')">📈 Trends</button>
 <button onclick="tab('library')">📚 Library</button>
+<button onclick="tab('publish')">🚀 Publish</button>
 <button onclick="tab('stats')">📊 Stats</button>
 </nav><main>
 <div id="t-studio" class="tab on">
@@ -197,6 +219,26 @@ display:block}.stat span{color:var(--dim);font-size:13px}
 </div>
 <div id="t-library" class="tab"><div class="panel"><h3>Projects</h3>
  <div id="projlist"></div></div></div>
+<div id="t-publish" class="tab">
+ <div class="panel"><h3>🚀 Publish to platforms</h3>
+  <div class="row" style="margin-bottom:14px"><div><label>Video</label>
+   <select id="pubslug" onchange="updateCount()"></select></div>
+   <div style="max-width:220px"><label>Mode</label><select id="pubmode">
+    <option value="dry">🧪 Dry run (safe test)</option>
+    <option value="live">🚨 Go live (posts for real)</option>
+   </select></div></div>
+  <div id="platgrid" class="platgrid"></div>
+  <div style="margin-top:16px;display:flex;gap:10px;align-items:center">
+   <button class="go" id="pubbtn" onclick="doPublish()">Publish to selected</button>
+   <span class="log" id="pubcount"></span></div>
+  <div id="pubresults" style="margin-top:14px"></div>
+ </div>
+ <div class="panel"><h3>🔑 Platform setup</h3>
+  <p class="log">One-time setup per platform. Keys go in your environment or
+  <b>.env</b> — never in the repo. See <b>docs/setup-&lt;platform&gt;.md</b> for the
+  2-minute walkthrough each.</p>
+  <div id="setuphelp"></div></div>
+</div>
 <div id="t-stats" class="tab"><div class="panel"><h3>Studio stats</h3>
  <div id="statlist"></div></div></div>
 </main>
@@ -205,7 +247,8 @@ function tab(n){document.querySelectorAll('.tab').forEach(e=>e.classList.remove(
 document.getElementById('t-'+n).classList.add('on');
 document.querySelectorAll('nav button').forEach(e=>e.classList.remove('on'));
 event.target.classList.add('on');
-if(n==='library')loadProjects();if(n==='stats')loadStats();if(n==='trends')loadTrends();}
+if(n==='library')loadProjects();if(n==='stats')loadStats();
+if(n==='trends')loadTrends();if(n==='publish')loadPublish();}
 async function generate(){
  const topic=document.getElementById('topic').value.trim();
  if(!topic){alert('Enter a topic');return;}
@@ -243,11 +286,58 @@ async function loadProjects(){
    <button class="go" onclick="publish('${p.slug}')">Publish</button>`:''}</div>`).join('')
   ||'<p class="log">No projects yet.</p>';}
 async function publish(slug){
- const plats=prompt('Platforms (comma-separated):','youtube,tiktok');
- if(!plats)return;
+ document.querySelectorAll('nav button')[3].click();tab('publish');
+ document.getElementById('pubslug').value=slug;}
+let _plats=[];
+async function loadPublish(){
+ const ps=await (await fetch('/api/projects')).json();
+ const vids=ps.filter(p=>p.has_video);
+ document.getElementById('pubslug').innerHTML=vids.map(p=>
+  `<option value="${p.slug}">${p.slug}</option>`).join('')
+  ||'<option value="">— no videos yet —</option>';
+ _plats=await (await fetch('/api/platforms')).json();
+ const grid=document.getElementById('platgrid');
+ grid.innerHTML=_plats.map(p=>{
+  const dis=p.state==='needs_setup';
+  const badge=p.state==='ready'?'✅ Ready':p.state==='needs_auth'?'🔑 Needs one-time auth':'⚠️ Needs setup';
+  return `<div class="pcard ${dis?'off':'sel'}" id="pc-${p.platform}"
+   ${dis?'':`onclick="togglePlat('${p.platform}')"`}>
+   <h4>${dis?'':`<input type="checkbox" checked onclick="event.stopPropagation();togglePlat('${p.platform}')">`}${p.label}</h4>
+   <span class="st ${p.state}">${badge}</span><br>
+   <small>${p.state==='ready'?'Good to go.'
+    :p.state==='needs_auth'?p.hint
+    :'Missing: '+p.missing.join(', ')+'. See docs/setup-'+p.platform+'.md'}</small></div>`;}).join('');
+ document.getElementById('setuphelp').innerHTML=_plats.filter(p=>p.state==='needs_setup').map(p=>
+  `<p class="log"><b>${p.label}</b> — set ${p.missing.join(', ')} in your environment or .env, then refresh. <b>docs/setup-${p.platform}.md</b> has the 2-minute guide.</p>`).join('')
+  ||'<p class="log">✅ Every platform is configured. Pick a video and hit Publish.</p>';
+ updateCount();}
+function togglePlat(p){
+ const card=document.getElementById('pc-'+p);
+ card.classList.toggle('sel');
+ const cb=card.querySelector('input');if(cb)cb.checked=card.classList.contains('sel');
+ updateCount();}
+function selPlats(){return _plats.filter(p=>{const c=document.getElementById('pc-'+p.platform);
+ return c&&c.classList.contains('sel')&&!c.classList.contains('off');}).map(p=>p.platform);}
+function updateCount(){const n=selPlats().length;
+ document.getElementById('pubcount').textContent=n?`${n} platform${n>1?'s':''} selected`:'Select at least one platform';
+ document.getElementById('pubbtn').disabled=!n||!document.getElementById('pubslug').value;}
+async function doPublish(){
+ const slug=document.getElementById('pubslug').value;
+ const platforms=selPlats();if(!slug||!platforms.length)return;
+ const live=document.getElementById('pubmode').value==='live';
+ if(live&&!confirm(`Post "${slug}" to ${platforms.join(', ')} FOR REAL?`))return;
+ const btn=document.getElementById('pubbtn');btn.disabled=true;
+ const box=document.getElementById('pubresults');
+ box.innerHTML='<p class="log">Publishing…</p>';
  const r=await fetch('/api/publish',{method:'POST',headers:{'Content-Type':'application/json'},
-  body:JSON.stringify({slug,platforms:plats.split(',').map(s=>s.trim()),dry_run:true})});
- alert(JSON.stringify(await r.json(),null,2));}
+  body:JSON.stringify({slug,platforms,dry_run:!live})});
+ const res=await r.json();
+ box.innerHTML=res.map(x=>{
+  if(x.error)return `<div class="res err">❌ <b>${x.platform}</b> — ${x.error}</div>`;
+  const url=x.url?` — <a href="${x.url}" target="_blank">view post ↗</a>`:'';
+  const tag=x.dry_run?'🧪 dry run':'✅ posted';
+  return `<div class="res ok">${tag} <b>${x.platform}</b>${url}</div>`;}).join('');
+ btn.disabled=false;}
 async function loadStats(){
  const s=await (await fetch('/api/stats')).json();
  document.getElementById('statlist').innerHTML=

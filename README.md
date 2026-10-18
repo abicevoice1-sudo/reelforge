@@ -108,7 +108,20 @@ prompt ──▶ script ──▶ voice ──▶ visuals ──▶ captions ─
 
 No fake likes, comments, follows, shares, or stars. No botting, no "human-like" evasion of platform detection, no scraping or unofficial endpoints. That violates every platform's rules and gets accounts banned — and it doesn't work for real growth anyway. This boundary is architectural, not a policy note: the capability simply isn't in the codebase.
 
-## Quickstart
+## Quickstart — one command
+
+```bash
+git clone https://github.com/abicevoice1-sudo/reelforge && cd reelforge
+./install.sh          # one-click: venv, all deps, vision model, voices, music, config
+source .venv/bin/activate
+reelforge serve       # → open http://127.0.0.1:8000 — Studio dashboard
+```
+
+Make a video in the 🎬 Studio tab, then hit the 🚀 **Publish tab** to post it to
+8 platforms (YouTube, TikTok, Instagram, X, Threads, Bluesky, LinkedIn,
+Pinterest) in one click — with per-platform setup status and dry-run safety.
+
+Manual install, if you prefer it piecemeal:
 
 ```bash
 pip install 'reelforge[ai,voice,captions,trends,vision,mcp,youtube,x,schedule]'
