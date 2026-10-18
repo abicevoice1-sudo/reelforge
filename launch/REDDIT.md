@@ -6,7 +6,7 @@
 
 **Body:**
 
-After months of nights, I'm launching ShortSmash v0.3.0: https://github.com/abicevoice1-sudo/shortsmash
+After months of nights, I'm launching ShortSmash v0.3.0: https://github.com/hydope/shortsmash
 
 Type a topic → it writes the script, narrates it (50 languages, native neural voices), finds footage, adds karaoke captions, renders 1080×1920, and publishes to 10 platforms in one click.
 
@@ -24,7 +24,7 @@ The README has a demo made end-to-end by the tool, including the Chinese version
 
 **Body:**
 
-https://github.com/abicevoice1-sudo/shortsmash
+https://github.com/hydope/shortsmash
 
 Full pipeline, all local-first where it matters: LLM script + edit plan → neural TTS (Edge/Piper/gTTS) → CLIP-verified stock or AI-generated footage → karaoke ASS captions → FFmpeg → 10 publishers → SQLite scheduler.
 

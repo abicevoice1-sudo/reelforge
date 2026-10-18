@@ -28,8 +28,8 @@ Urdu gets proper Nastaliq calligraphy with RTL karaoke. Mandarin gets a native v
 
 **6/** One command installs everything:
 
-`curl -fsSL https://raw.githubusercontent.com/abicevoice1-sudo/shortsmash/main/install.sh | bash`
+`curl -fsSL https://raw.githubusercontent.com/hydope/shortsmash/main/install.sh | bash`
 
 Then `shortsmash serve` opens the Studio. MIT licensed. Star it if you make something cool with it 👇
 
-github.com/abicevoice1-sudo/shortsmash
+github.com/hydope/shortsmash

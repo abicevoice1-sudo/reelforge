@@ -2,7 +2,7 @@
 
 **Title:** Show HN: ShortSmash – prompt-to-published short videos, 50-language dubbing, open source
 
-**URL:** https://github.com/abicevoice1-sudo/shortsmash
+**URL:** https://github.com/hydope/shortsmash
 
 **Body:**
 
@@ -21,6 +21,6 @@ Visual providers: Pixabay stock (free), Agnes AI (free tier), and as of v0.3.0, 
 
 There's a web Studio (`shortsmash serve`), a lyrics-video mode, an Auto tab that goes trend → video → scheduled publish with API quota budgeting, and an MCP server.
 
-One-command install: `curl -fsSL https://raw.githubusercontent.com/abicevoice1-sudo/shortsmash/main/install.sh | bash`
+One-command install: `curl -fsSL https://raw.githubusercontent.com/hydope/shortsmash/main/install.sh | bash`
 
 MIT licensed. The demo in the README ("How Goats Made You Addicted to Coffee") was made end-to-end by the tool — including the Mandarin re-voice. Happy to answer anything about the pipeline, the vision gate, or why Urdu karaoke was the hardest caption problem I've ever solved.

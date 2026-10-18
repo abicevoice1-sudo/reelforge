@@ -20,7 +20,7 @@ if [ ! -f "$(dirname "$0")/pyproject.toml" ]; then
   if [ -d "$TARGET/.git" ]; then
     git -C "$TARGET" pull --ff-only >/dev/null 2>&1 || true
   else
-    git clone --depth 1 https://github.com/abicevoice1-sudo/shortsmash.git "$TARGET"
+    git clone --depth 1 https://github.com/hydope/shortsmash.git "$TARGET"
   fi
   cd "$TARGET"
 else

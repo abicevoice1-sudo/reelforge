@@ -1,11 +1,11 @@
 <# ShortSmash one-click installer (PowerShell).
    Run from an elevated-or-not PowerShell with:
-     & ([scriptblock]::Create((irm "https://raw.githubusercontent.com/abicevoice1-sudo/shortsmash/main/install.ps1")))
+     & ([scriptblock]::Create((irm "https://raw.githubusercontent.com/hydope/shortsmash/main/install.ps1")))
    Does everything: Python, FFmpeg, Git, repo, venv, voices, fonts,
    Desktop + Start Menu shortcuts. Then launches the Studio. #>
 $ErrorActionPreference = "Stop"
 $InstallDir = Join-Path $HOME "ShortSmash"
-$RepoUrl = "https://github.com/abicevoice1-sudo/shortsmash.git"
+$RepoUrl = "https://github.com/hydope/shortsmash.git"
 
 function Say($m) { Write-Host "  $m" }
 function Ok($m) { Write-Host "  [OK] $m" -ForegroundColor Green }
@@ -68,7 +68,7 @@ if (Test-Path (Join-Path $InstallDir ".git")) {
 } else {
   Say "Downloading ShortSmash zip..."
   $zip = Join-Path $env:TEMP "shortsmash.zip"
-  Invoke-WebRequest -Uri "https://github.com/abicevoice1-sudo/shortsmash/archive/refs/heads/main.zip" -OutFile $zip
+  Invoke-WebRequest -Uri "https://github.com/hydope/shortsmash/archive/refs/heads/main.zip" -OutFile $zip
   Expand-Archive -Path $zip -DestinationPath $env:TEMP -Force
   if (Test-Path $InstallDir) { Remove-Item -Recurse -Force $InstallDir }
   Move-Item (Join-Path $env:TEMP "shortsmash-main") $InstallDir

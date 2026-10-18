@@ -5,7 +5,7 @@
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](tests/)
-[![CI](https://github.com/abicevoice1-sudo/shortsmash/actions/workflows/ci.yml/badge.svg)](https://github.com/abicevoice1-sudo/shortsmash/actions)
+[![CI](https://github.com/hydope/shortsmash/actions/workflows/ci.yml/badge.svg)](https://github.com/hydope/shortsmash/actions)
 
 **Prompt in. Viral short out.**
 
@@ -124,18 +124,18 @@ No fake likes, comments, follows, shares, or stars. No botting, no "human-like" 
 FFmpeg, Git if missing, sets everything up, and puts **ShortSmash Studio**
 on your Desktop + Start Menu:
 ```powershell
-& ([scriptblock]::Create((irm "https://raw.githubusercontent.com/abicevoice1-sudo/shortsmash/main/install.ps1")))
+& ([scriptblock]::Create((irm "https://raw.githubusercontent.com/hydope/shortsmash/main/install.ps1")))
 ```
 
 **Windows (CMD)** — same thing, one line in Command Prompt:
 ```cmd
-curl -L -o "%TEMP%\rf-install.cmd" "https://raw.githubusercontent.com/abicevoice1-sudo/shortsmash/main/install.cmd" && "%TEMP%\rf-install.cmd"
+curl -L -o "%TEMP%\rf-install.cmd" "https://raw.githubusercontent.com/hydope/shortsmash/main/install.cmd" && "%TEMP%\rf-install.cmd"
 ```
 
 **Linux / macOS / Git Bash (Windows)** — one line, works everywhere including
 Git Bash on Windows:
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/abicevoice1-sudo/shortsmash/main/install.sh" | bash
+curl -fsSL "https://raw.githubusercontent.com/hydope/shortsmash/main/install.sh" | bash
 ```
 
 After install, launch **ShortSmash Studio** from the Start Menu / Desktop

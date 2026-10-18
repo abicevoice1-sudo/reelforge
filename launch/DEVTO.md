@@ -8,7 +8,7 @@
 
 Every AI shorts tool has the same dirty secret: they assemble clips blindly. The stock API returns *something* for "espresso," and that something goes into your video. I've seen burgers in biryani videos. Robins in cooking tutorials.
 
-So when I built ShortSmash (https://github.com/abicevoice1-sudo/shortsmash), I made footage verification the core of the pipeline, not an afterthought.
+So when I built ShortSmash (https://github.com/hydope/shortsmash), I made footage verification the core of the pipeline, not an afterthought.
 
 ## The two-stage vision gate
 
@@ -30,7 +30,7 @@ Either one can veto. Gemini errors fail *open* (a down API shouldn't block your 
 ## Try it
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/abicevoice1-sudo/shortsmash/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/hydope/shortsmash/main/install.sh | bash
 shortsmash serve
 ```
 
