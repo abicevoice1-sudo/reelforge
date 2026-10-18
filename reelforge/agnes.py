@@ -25,13 +25,19 @@ as a surrogate — it never appears in code, logs, or files.
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 import urllib.request
 from pathlib import Path
 
-sys.path.insert(0, "/opt/muse/skills/custom-connector-setup/bin")
-from dynamic_credentials import add_surrogate_to_request  # noqa: E402
+try:
+    # Muse VM: inject the Secure Vault credential as a surrogate header.
+    sys.path.insert(0, "/opt/muse/skills/custom-connector-setup/bin")
+    from dynamic_credentials import add_surrogate_to_request  # noqa: E402
+except ImportError:
+    # CI / user machines: fall back to the AGNES_API_KEY env var.
+    add_surrogate_to_request = None  # type: ignore[assignment]
 
 from .config import Config
 
@@ -53,7 +59,11 @@ def _authed(url: str, data: dict | None = None) -> urllib.request.Request:
         headers={"Content-Type": "application/json"},
         method="POST" if data is not None else "GET",
     )
-    add_surrogate_to_request(req, "custom.agnes", allowed_hosts=HOSTS)
+    if add_surrogate_to_request is not None:
+        add_surrogate_to_request(req, "custom.agnes", allowed_hosts=HOSTS)
+    else:
+        req.add_header("Authorization",
+                       f"Bearer {os.environ.get('AGNES_API_KEY', '')}")
     return req
 
 
