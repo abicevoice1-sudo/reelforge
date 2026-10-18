@@ -13,7 +13,19 @@
 #   Windows:      source .venv/Scripts/activate
 #   reelforge serve   # → open http://127.0.0.1:8000 for the Studio dashboard
 set -euo pipefail
-cd "$(dirname "$0")"
+# Support `curl ... | bash`: no repo on disk yet -> clone it first.
+if [ ! -f "$(dirname "$0")/pyproject.toml" ]; then
+  command -v git >/dev/null 2>&1 || { echo "git is required for the one-line install. Install git, then re-run."; exit 1; }
+  TARGET="$HOME/reelforge"
+  if [ -d "$TARGET/.git" ]; then
+    git -C "$TARGET" pull --ff-only >/dev/null 2>&1 || true
+  else
+    git clone --depth 1 https://github.com/abicevoice1-sudo/reelforge.git "$TARGET"
+  fi
+  cd "$TARGET"
+else
+  cd "$(dirname "$0")"
+fi
 
 say()  { printf '\n\033[1;33m\xe2\x9a\x92\xef\xb8\x8f  %s\033[0m\n' "$1"; }
 ok()   { printf '\033[1;32m\xe2\x9c\x93 %s\033[0m\n' "$1"; }

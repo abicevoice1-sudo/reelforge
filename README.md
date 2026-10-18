@@ -110,22 +110,27 @@ No fake likes, comments, follows, shares, or stars. No botting, no "human-like" 
 
 ## Quickstart — one command
 
-**Windows:** download the repo, double-click **`install.bat`**, then run:
-```
-.venv\Scripts\activate
-reelforge serve       # → open http://127.0.0.1:8000 — Studio dashboard
+**Windows (PowerShell)** — paste this one line, done. It installs Python,
+FFmpeg, Git if missing, sets everything up, and puts **ReelForge Studio**
+on your Desktop + Start Menu:
+```powershell
+& ([scriptblock]::Create((irm "https://raw.githubusercontent.com/abicevoice1-sudo/reelforge/main/install.ps1")))
 ```
 
 **Linux / macOS:**
 ```bash
-git clone https://github.com/abicevoice1-sudo/reelforge && cd reelforge
-./install.sh          # one-click: venv, all deps, vision model, voices, music, config
-source .venv/bin/activate
-reelforge serve       # → open http://127.0.0.1:8000 — Studio dashboard
+curl -fsSL "https://raw.githubusercontent.com/abicevoice1-sudo/reelforge/main/install.sh" | bash
 ```
 
-Needs Python 3.11–3.13 and ffmpeg. On Python 3.14+ the offline footage
-check is skipped automatically (torch has no build for it yet).
+After install, launch **ReelForge Studio** from the Start Menu / Desktop
+(Windows) or run `reelforge serve` → open http://127.0.0.1:8000.
+
+Prefer it manual? Download the repo and double-click **`install.bat`**
+(Windows) or run `./install.sh` (Linux/macOS).
+
+Needs Python 3.11–3.13 and ffmpeg (the PowerShell installer gets both for
+you). On Python 3.14+ the offline footage check is skipped automatically
+(torch has no build for it yet).
 
 Make a video in the 🎬 Studio tab, then hit the 🚀 **Publish tab** to post it to
 8 platforms (YouTube, TikTok, Instagram, X, Threads, Bluesky, LinkedIn,
