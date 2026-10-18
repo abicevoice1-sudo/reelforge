@@ -144,5 +144,19 @@ printf '\033[1;32m🎉 ShortSmash is ready.\033[0m\n\n'
 printf '  %s\n' "$ACTIVATE"
 printf '  shortsmash serve   →  open http://127.0.0.1:8000\n\n'
 printf 'Make your first video from the Studio dashboard, then hit the\n'
-printf '🚀 Publish tab to post it to 8 platforms in one click.\n'
+printf '🚀 Publish tab to post it to 10 platforms in one click.\n'
 printf '\033[1;32m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n'
+
+# Offer to start the server now. Read from /dev/tty so this works under
+# `curl ... | bash`, where stdin is the script itself.
+if [ -c /dev/tty ]; then
+  printf '\n  Start ShortSmash Studio now? [Y/n] ' > /dev/tty
+  read -r _launch < /dev/tty || _launch=""
+  case "$_launch" in
+    [nN]*) say "Studio not started. Launch anytime with: shortsmash serve" ;;
+    *)
+      say "Starting ShortSmash Studio at http://127.0.0.1:8000 ..."
+      exec "$VBIN/shortsmash" serve
+      ;;
+  esac
+fi
