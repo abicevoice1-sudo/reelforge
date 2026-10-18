@@ -110,12 +110,22 @@ No fake likes, comments, follows, shares, or stars. No botting, no "human-like" 
 
 ## Quickstart — one command
 
+**Windows:** download the repo, double-click **`install.bat`**, then run:
+```
+.venv\Scripts\activate
+reelforge serve       # → open http://127.0.0.1:8000 — Studio dashboard
+```
+
+**Linux / macOS:**
 ```bash
 git clone https://github.com/abicevoice1-sudo/reelforge && cd reelforge
 ./install.sh          # one-click: venv, all deps, vision model, voices, music, config
 source .venv/bin/activate
 reelforge serve       # → open http://127.0.0.1:8000 — Studio dashboard
 ```
+
+Needs Python 3.11–3.13 and ffmpeg. On Python 3.14+ the offline footage
+check is skipped automatically (torch has no build for it yet).
 
 Make a video in the 🎬 Studio tab, then hit the 🚀 **Publish tab** to post it to
 8 platforms (YouTube, TikTok, Instagram, X, Threads, Bluesky, LinkedIn,
