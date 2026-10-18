@@ -1,13 +1,13 @@
-"""ReelForge MCP server: let AI agents drive the video factory.
+"""ShortSmash MCP server: let AI agents drive the video factory.
 
 Exposes the pipeline as Model Context Protocol tools over stdio, so
 Claude Code, Cursor, or any MCP client can generate videos, check
 trends, and inspect projects without touching the CLI.
 
 Add to your MCP client config:
-    {"mcpServers": {"reelforge": {
-        "command": "/path/to/reelforge/.venv/bin/python",
-        "args": ["-m", "reelforge.mcp_server"]}}}
+    {"mcpServers": {"shortsmash": {
+        "command": "/path/to/shortsmash/.venv/bin/python",
+        "args": ["-m", "shortsmash.mcp_server"]}}}
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from .config import Config
 from . import pipeline
 from . import trends as trends_mod
 
-mcp = FastMCP("reelforge")
+mcp = FastMCP("shortsmash")
 
 
 @mcp.tool()
@@ -29,7 +29,7 @@ def generate_video(topic: str, duration: int = 30) -> str:
     """
     cfg = Config()
     workdir = pipeline.create_project(topic, duration, cfg)
-    return f"Video ready: {workdir.name} (publish with `reelforge publish {workdir.name}`)"
+    return f"Video ready: {workdir.name} (publish with `shortsmash publish {workdir.name}`)"
 
 
 @mcp.tool()

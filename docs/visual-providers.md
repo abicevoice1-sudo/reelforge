@@ -1,6 +1,6 @@
 # Visual providers
 
-`visual_provider` in `~/.reelforge/config.yaml` (default: `stock`).
+`visual_provider` in `~/.shortsmash/config.yaml` (default: `stock`).
 
 ## stock (default, free)
 
@@ -9,7 +9,7 @@ Pixabay footage, every clip verified by the two-stage vision gate
 
 ## custom (bring your own generator)
 
-Point ReelForge at any text-to-video system — ComfyUI, Replicate,
+Point ShortSmash at any text-to-video system — ComfyUI, Replicate,
 MiniMax, Seedance, Runway, or your own script:
 
 ```yaml
@@ -24,4 +24,4 @@ within 10 minutes. The vision gate still checks the result before it ships.
 Why a shell command instead of a built-in integration? Every AI video vendor
 has a different API, auth scheme, and pricing tier — a single half-working
 built-in would rot. The shell boundary lets you plug in whatever you
-already pay for, and swap vendors without touching ReelForge.
+already pay for, and swap vendors without touching ShortSmash.

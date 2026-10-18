@@ -1,5 +1,5 @@
-from reelforge import llm as llm_mod
-from reelforge.config import Config
+from shortsmash import llm as llm_mod
+from shortsmash.config import Config
 
 
 def test_provider_prefers_nvidia(monkeypatch):

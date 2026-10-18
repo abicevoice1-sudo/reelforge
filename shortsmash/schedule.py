@@ -1,8 +1,8 @@
 """Scheduler: a durable SQLite queue + a worker that publishes on time.
 
-`reelforge schedule "topic" --at "Friday 6pm" --platforms youtube,tiktok`
+`shortsmash schedule "topic" --at "Friday 6pm" --platforms youtube,tiktok`
 parses the natural-language time (timezone-aware), renders the video NOW
-(rendering is the slow part), and queues the publish job. `reelforge worker`
+(rendering is the slow part), and queues the publish job. `shortsmash worker`
 runs the queue (APScheduler, survives restarts — jobs live in SQLite, not RAM).
 
 Job states: queued → done | failed. Retries: 3x with backoff on API errors.

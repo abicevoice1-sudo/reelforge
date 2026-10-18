@@ -151,7 +151,7 @@ def synthesize_scene(text: str, out: Path, cfg: Config | None = None) -> Path:
         asyncio.run(_bounded())
     except ImportError as exc:
         raise RuntimeError(
-            "edge-tts is not installed. Run: pip install 'reelforge[voice]'."
+            "edge-tts is not installed. Run: pip install 'shortsmash[voice]'."
         ) from exc
     except Exception:
         # Edge-TTS unreachable (restricted networks, etc.) → best local

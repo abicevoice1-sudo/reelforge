@@ -1,10 +1,10 @@
 [project]
-name = "reelforge"
+name = "shortsmash"
 version = "0.2.0"
 description = "Prompt in. Viral short out. AI video studio: script, voice, stock, edit, captions, and official-API publishing to YouTube, TikTok, Instagram and X."
 readme = "README.md"
 license = { text = "MIT" }
-authors = [{ name = "ReelForge" }]
+authors = [{ name = "ShortSmash" }]
 requires-python = ">=3.10"
 keywords = ["video", "shorts", "reels", "tiktok", "youtube", "ai-video", "ffmpeg"]
 classifiers = [
@@ -38,14 +38,16 @@ bluesky = ["httpx>=0.25"]
 threads = ["httpx>=0.25"]
 
 [project.scripts]
-reelforge = "reelforge.cli:app"
+shortsmash = "shortsmash.cli:app"
+# Backwards-compat alias for the old name.
+reelforge = "shortsmash.cli:app"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["reelforge"]
+packages = ["shortsmash"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

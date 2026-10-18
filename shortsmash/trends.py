@@ -5,7 +5,7 @@ Sources (all keyless and verified working):
   - Hacker News official API — tech/AI front-page stories
 
 Each trend gets a score from source authority and recency, so
-`reelforge batch` can turn today's conversations into today's videos.
+`shortsmash batch` can turn today's conversations into today's videos.
 
 Note: Reddit's public JSON API now requires OAuth (403 without it) and
 Google Trends' trending endpoint is deprecated — both are deliberately
@@ -53,7 +53,7 @@ def _client() -> httpx.Client:
     return httpx.Client(
         proxy=_PROXY or None,
         timeout=20,
-        headers={"User-Agent": "ReelForge/1.0 (trend research)"},
+        headers={"User-Agent": "ShortSmash/1.0 (trend research)"},
     )
 
 

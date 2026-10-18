@@ -8,16 +8,16 @@ mp4 and reports back. Quiet otherwise.
 import sys
 from pathlib import Path
 
-sys.path.insert(0, "/home/hatch/workspace/reelforge")
-sys.path.insert(0, "/home/hatch/workspace/reelforge/.venv/lib/python3.12/site-packages")
+sys.path.insert(0, "/home/hatch/workspace/shortsmash")
+sys.path.insert(0, "/home/hatch/workspace/shortsmash/.venv/lib/python3.12/site-packages")
 
-from reelforge import agnes
-from reelforge.config import Config
+from shortsmash import agnes
+from shortsmash.config import Config
 
 out = Path("/tmp/agnes_probe.mp4")
 try:
     # Single attempt, no backoff: the cron itself is the retry loop.
-    import reelforge.agnes as ag
+    import shortsmash.agnes as ag
     orig_generate = ag.generate
     def one_shot(prompt, out, cfg, duration=4.0, aspect="9:16"):
         create = ag._call(f"{ag.BASE}/v1/videos", {

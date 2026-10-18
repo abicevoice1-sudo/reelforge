@@ -1,6 +1,6 @@
 """Local vision relevance: CLIP zero-shot classification, fully offline.
 
-Gives ReelForge its own eyes. No API key, no quota, no network — a candidate
+Gives ShortSmash its own eyes. No API key, no quota, no network — a candidate
 clip's middle frame is scored against the scene's query vs. a set of generic
 confuser labels. Used as the relevance gate when the Gemini vision check is
 unavailable (and as a pre-filter before spending Gemini calls).

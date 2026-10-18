@@ -2,9 +2,9 @@ from pathlib import Path
 
 import pytest
 
-from reelforge.captions import RLM, Word, _is_rtl, build_ass, distribute_words
-from reelforge.music import duck_expression, speech_segments
-from reelforge.schemas import Scene
+from shortsmash.captions import RLM, Word, _is_rtl, build_ass, distribute_words
+from shortsmash.music import duck_expression, speech_segments
+from shortsmash.schemas import Scene
 
 
 def test_distribute_words_even():
@@ -133,7 +133,7 @@ def test_local_vision_rejects_wrong_clip():
     pytest.importorskip("torch")
     pytest.importorskip("transformers")
     from pathlib import Path as P
-    from reelforge import vision_local
+    from shortsmash import vision_local
 
     good = P("/tmp/v3check/f2.jpg")   # steaming biryani pot
     bad = P("/tmp/v3check/f22.jpg")   # burger patty
@@ -145,7 +145,7 @@ def test_local_vision_rejects_wrong_clip():
 
 def test_trend_scoring_and_dedupe():
     """Trend ranking: higher engagement wins, duplicates collapse."""
-    from reelforge.trends import Trend, NICHE_QUERIES
+    from shortsmash.trends import Trend, NICHE_QUERIES
     assert "food" in NICHE_QUERIES and "ai" in NICHE_QUERIES
     ts = [
         Trend(title="Viral Biryani Recipe", source="Google News", score=50.0),
@@ -165,8 +165,8 @@ def test_openai_provider_routing():
     """llm.provider honors a pinned 'openai' provider and _openai posts
     to the configured base_url (OpenRouter/DeepSeek/Ollama all work)."""
     from unittest.mock import patch
-    from reelforge import llm
-    from reelforge.config import Config
+    from shortsmash import llm
+    from shortsmash.config import Config
     cfg = Config(overrides={"llm_provider": "openai",
                             "openai_base_url": "http://localhost:11434/v1",
                             "openai_model": "llama3"})
@@ -190,8 +190,8 @@ def test_openai_provider_routing():
 
 def test_visual_provider_routing():
     """visual.fetch uses stock by default, custom when configured."""
-    from reelforge import visual
-    from reelforge.config import Config
+    from shortsmash import visual
+    from shortsmash.config import Config
     cfg = Config()
     assert cfg.get("visual_provider", "stock") == "stock"
     # custom without a command must fail loudly, not silently
@@ -204,8 +204,8 @@ def test_visual_provider_routing():
 def test_new_publishers_dry_run():
     """Threads + Bluesky adapters support dry_run without credentials."""
     from pathlib import Path
-    from reelforge.publish import publish, ADAPTERS
-    from reelforge.config import Config
+    from shortsmash.publish import publish, ADAPTERS
+    from shortsmash.config import Config
     assert "threads" in ADAPTERS and "bluesky" in ADAPTERS
     v = Path("/tmp/fake.mp4")
     v.write_bytes(b"x" * 100)
@@ -217,7 +217,7 @@ def test_new_publishers_dry_run():
 def test_web_api_endpoints():
     """Studio web UI: index, projects, stats, trends all respond."""
     from fastapi.testclient import TestClient
-    from reelforge.web import app
+    from shortsmash.web import app
     c = TestClient(app)
     assert c.get("/").status_code == 200
     assert c.get("/api/projects").status_code == 200
@@ -229,8 +229,8 @@ def test_web_api_endpoints():
 def test_linkedin_pinterest_dry_run():
     """LinkedIn + Pinterest adapters dry_run without credentials."""
     from pathlib import Path
-    from reelforge.publish import publish, ADAPTERS
-    from reelforge.config import Config
+    from shortsmash.publish import publish, ADAPTERS
+    from shortsmash.config import Config
     assert len(ADAPTERS) == 10
     v = Path("/tmp/fake.mp4")
     for p in ("linkedin", "pinterest", "facebook", "facebook_page"):
@@ -240,7 +240,7 @@ def test_linkedin_pinterest_dry_run():
 
 def test_dub_language_map():
     """Dubbing supports 50 language options with native neural voices."""
-    from reelforge.voice import DUB_LANGUAGES, SAMPLE_VOICES
+    from shortsmash.voice import DUB_LANGUAGES, SAMPLE_VOICES
     assert len(DUB_LANGUAGES) == 50
     for lang in DUB_LANGUAGES:
         assert SAMPLE_VOICES[lang], f"no voices for {lang}"
@@ -248,7 +248,7 @@ def test_dub_language_map():
 
 def test_analytics_youtube_id():
     """YouTube video ID extraction from Shorts URLs."""
-    from reelforge.analytics import _youtube_id
+    from shortsmash.analytics import _youtube_id
     assert _youtube_id("https://www.youtube.com/shorts/abc123") == "abc123"
     assert _youtube_id("https://youtu.be/xyz789?t=5") == "xyz789"
     assert _youtube_id("https://example.com") is None

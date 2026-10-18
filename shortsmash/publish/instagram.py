@@ -7,7 +7,7 @@ Setup (docs/setup-instagram.md):
      Env: IG_ACCESS_TOKEN, IG_USER_ID.
 
 Flow: the MP4 must live at a PUBLIC https URL (Meta fetches it server-side).
-Pass video_url=..., or set REELFORGE_PUBLIC_URL and ReelForge appends the
+Pass video_url=..., or set SHORTSMASH_PUBLIC_URL and ShortSmash appends the
 project path. Then: create REELS container → poll until FINISHED → publish.
 
 Reels: 3s–15min, 9:16 recommended, <= 1GB.

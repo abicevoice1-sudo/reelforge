@@ -2,9 +2,9 @@
 
 Setup (docs/setup-youtube.md):
   1. Google Cloud project → enable YouTube Data API v3 → OAuth consent screen.
-  2. Download OAuth client JSON → ~/.reelforge/youtube_client.json
+  2. Download OAuth client JSON → ~/.shortsmash/youtube_client.json
   3. First run opens a browser to grant the youtube.upload scope; the token is
-     cached at ~/.reelforge/youtube_token.json (refresh handled automatically).
+     cached at ~/.shortsmash/youtube_token.json (refresh handled automatically).
 
 A video <= 60s with #Shorts in the title/description is served as a Short.
 """
@@ -28,7 +28,7 @@ def _service(cfg: Config):
         from googleapiclient.discovery import build
         from googleapiclient.http import MediaFileUpload
     except ImportError as exc:
-        raise RuntimeError("pip install 'reelforge[youtube]' first.") from exc
+        raise RuntimeError("pip install 'shortsmash[youtube]' first.") from exc
 
     if not CLIENT_JSON.exists():
         raise RuntimeError(

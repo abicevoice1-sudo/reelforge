@@ -1,6 +1,6 @@
 """Script stage: an LLM writes the script + edit plan as strict JSON.
 
-Provider is routed by reelforge.llm (NVIDIA NIM preferred — free tier and
+Provider is routed by shortsmash.llm (NVIDIA NIM preferred — free tier and
 already Syed's production LLM — then Gemini, then an offline template).
 JSON-mode output validated by pydantic; one repair retry on failure.
 """
@@ -14,7 +14,7 @@ from . import plain_script
 from .config import Config
 from .schemas import EditPlan, Scene
 
-SYSTEM_PROMPT = """You are ReelForge's viral-short scriptwriter — the mind behind scroll-stopping
+SYSTEM_PROMPT = """You are ShortSmash's viral-short scriptwriter — the mind behind scroll-stopping
 vertical videos (9:16, 15-60s) with the craft of a film trailer and the punch
 of the best creators. Think like an AI-film director: every scene is a SHOT,
 not a slide.

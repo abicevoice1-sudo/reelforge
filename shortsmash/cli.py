@@ -1,4 +1,4 @@
-"""ReelForge CLI — prompt in, viral short out."""
+"""ShortSmash CLI — prompt in, viral short out."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from . import __version__, agent, engage, pipeline, schedule
 from .config import CONFIG_FILE, DEFAULTS, Config, ensure_home
 from .publish import ADAPTERS
 
-app = typer.Typer(help="ReelForge — prompt in, viral short out.",
+app = typer.Typer(help="ShortSmash — prompt in, viral short out.",
                   no_args_is_help=True)
 console = Console()
 
@@ -25,12 +25,12 @@ def _cfg(**overrides) -> Config:
 
 @app.command()
 def init():
-    """Create ~/.reelforge/config.yaml and show what's needed."""
+    """Create ~/.shortsmash/config.yaml and show what's needed."""
     ensure_home()
     if not CONFIG_FILE.exists():
         import yaml
         CONFIG_FILE.write_text(yaml.safe_dump(DEFAULTS, sort_keys=False))
-    (Path.home() / ".reelforge" / "music").mkdir(exist_ok=True)
+    (Path.home() / ".shortsmash" / "music").mkdir(exist_ok=True)
     console.print(f"[green]✓[/green] Config at {CONFIG_FILE}")
     console.print("Next: copy .env.example → .env and add keys (Gemini, Pexels…). "
                   "Only Pexels/Edge-TTS/Gemini-free are needed for the basics — "
@@ -82,7 +82,7 @@ def new(topic: str, duration: int = typer.Option(30, help="Target seconds (5-180
     cfg = _cfg(**{k: v for k, v in overrides.items() if v is not None})
     workdir = pipeline.create_project(topic, duration, cfg)
     console.print(f"Project: [bold]{workdir.name}[/bold]  •  "
-                  f"Publish with: reelforge publish {workdir.name} --platforms youtube,tiktok")
+                  f"Publish with: shortsmash publish {workdir.name} --platforms youtube,tiktok")
 
 
 @app.command()
@@ -122,7 +122,7 @@ def schedule(topic: str,
                               {"slug": workdir.name, "platforms": plats})
     console.print(f"[green]✓[/green] Queued publish of [bold]{workdir.name}[/bold] "
                   f"→ {', '.join(plats)} at {run_at:%A %Y-%m-%d %H:%M %Z} "
-                  f"(job #{job_id}). Run [bold]reelforge worker[/bold] to process the queue.")
+                  f"(job #{job_id}). Run [bold]shortsmash worker[/bold] to process the queue.")
 
 
 @app.command()
@@ -290,9 +290,9 @@ def batch(niche: str = typer.Argument(..., help="Niche to harvest trends from"),
 @app.command()
 def serve(host: str = typer.Option("127.0.0.1", help="Bind address"),
           port: int = typer.Option(8000, help="Port")):
-    """Launch ReelForge Studio — the web UI."""
+    """Launch ShortSmash Studio — the web UI."""
     from .web import main as serve_main
-    console.print(f"[bold]ReelForge Studio:[/bold] http://{host}:{port}")
+    console.print(f"[bold]ShortSmash Studio:[/bold] http://{host}:{port}")
     serve_main(host, port)
 
 
@@ -328,7 +328,7 @@ def dub(slug: str, lang: str = typer.Option(..., help="ur|ur-roman|hi|hi-roman|a
 
 @app.command()
 def version():
-    console.print(f"ReelForge {__version__}")
+    console.print(f"ShortSmash {__version__}")
 
 
 @app.command()
@@ -345,10 +345,10 @@ def lyrics(lyrics_file: str = typer.Argument(..., help="Text file with lyrics (o
 
 @app.command()
 def update():
-    """Pull the latest ReelForge from GitHub and reinstall. Keeps your config."""
+    """Pull the latest ShortSmash from GitHub and reinstall. Keeps your config."""
     import subprocess
     repo = Path(__file__).resolve().parent.parent
-    console.print("[bold]Updating ReelForge…[/bold]")
+    console.print("[bold]Updating ShortSmash…[/bold]")
     try:
         subprocess.run(["git", "pull", "--ff-only"], cwd=repo, check=True,
                        capture_output=True, text=True)
@@ -367,7 +367,7 @@ def update():
         console.print("[green]✓[/green] Reinstalled")
     else:
         console.print("[yellow]![/yellow] No .venv found — run ./install.sh (or install.bat) once.")
-    console.print(f"[bold green]ReelForge is up to date.[/bold green]")
+    console.print(f"[bold green]ShortSmash is up to date.[/bold green]")
 
 
 if __name__ == "__main__":

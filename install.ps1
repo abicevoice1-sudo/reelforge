@@ -1,11 +1,11 @@
-<# ReelForge one-click installer (PowerShell).
+<# ShortSmash one-click installer (PowerShell).
    Run from an elevated-or-not PowerShell with:
-     & ([scriptblock]::Create((irm "https://raw.githubusercontent.com/abicevoice1-sudo/reelforge/main/install.ps1")))
+     & ([scriptblock]::Create((irm "https://raw.githubusercontent.com/abicevoice1-sudo/shortsmash/main/install.ps1")))
    Does everything: Python, FFmpeg, Git, repo, venv, voices, fonts,
    Desktop + Start Menu shortcuts. Then launches the Studio. #>
 $ErrorActionPreference = "Stop"
-$InstallDir = Join-Path $HOME "ReelForge"
-$RepoUrl = "https://github.com/abicevoice1-sudo/reelforge.git"
+$InstallDir = Join-Path $HOME "ShortSmash"
+$RepoUrl = "https://github.com/abicevoice1-sudo/shortsmash.git"
 
 function Say($m) { Write-Host "  $m" }
 function Ok($m) { Write-Host "  [OK] $m" -ForegroundColor Green }
@@ -14,7 +14,7 @@ function Fail($m) { Write-Host "  [X] $m" -ForegroundColor Red; exit 1 }
 
 Write-Host ""
 Write-Host "  ============================================" -ForegroundColor Cyan
-Write-Host "   ReelForge one-click setup" -ForegroundColor Cyan
+Write-Host "   ShortSmash one-click setup" -ForegroundColor Cyan
 Write-Host "  ============================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -63,17 +63,17 @@ if (Test-Path (Join-Path $InstallDir ".git")) {
   Say "Updating existing install at $InstallDir..."
   git -C $InstallDir pull --ff-only | Out-Null
 } elseif ($haveGit) {
-  Say "Cloning ReelForge to $InstallDir..."
+  Say "Cloning ShortSmash to $InstallDir..."
   git clone --depth 1 $RepoUrl $InstallDir | Out-Null
 } else {
-  Say "Downloading ReelForge zip..."
-  $zip = Join-Path $env:TEMP "reelforge.zip"
-  Invoke-WebRequest -Uri "https://github.com/abicevoice1-sudo/reelforge/archive/refs/heads/main.zip" -OutFile $zip
+  Say "Downloading ShortSmash zip..."
+  $zip = Join-Path $env:TEMP "shortsmash.zip"
+  Invoke-WebRequest -Uri "https://github.com/abicevoice1-sudo/shortsmash/archive/refs/heads/main.zip" -OutFile $zip
   Expand-Archive -Path $zip -DestinationPath $env:TEMP -Force
   if (Test-Path $InstallDir) { Remove-Item -Recurse -Force $InstallDir }
-  Move-Item (Join-Path $env:TEMP "reelforge-main") $InstallDir
+  Move-Item (Join-Path $env:TEMP "shortsmash-main") $InstallDir
 }
-Ok "ReelForge code ready"
+Ok "ShortSmash code ready"
 
 # ---------- venv + package ----------
 $venvPy = Join-Path $InstallDir ".venv\Scripts\python.exe"
@@ -82,7 +82,7 @@ if (-not (Test-Path $venvPy)) {
   python -m venv (Join-Path $InstallDir ".venv")
 }
 $venvPip = Join-Path $InstallDir ".venv\Scripts\pip.exe"
-Say "Installing ReelForge (this takes a few minutes)..."
+Say "Installing ShortSmash (this takes a few minutes)..."
 & $venvPip install -q --upgrade pip | Out-Null
 $BaseExtras = "ai,voice,web,mcp,trends,bluesky,threads,youtube,x,schedule,captions"
 $Extras = $BaseExtras
@@ -91,10 +91,10 @@ if (-not $SkipVision) { $Extras = "$BaseExtras,vision" }
 if ($LASTEXITCODE -ne 0) {
   Warn "Full install failed - retrying without the vision extra (torch)."
   & $venvPip install -q -e ".[$BaseExtras]"
-  if ($LASTEXITCODE -ne 0) { Fail "pip install failed. Re-run the installer, or paste the error on the ReelForge repo." }
+  if ($LASTEXITCODE -ne 0) { Fail "pip install failed. Re-run the installer, or paste the error on the ShortSmash repo." }
   $SkipVision = $true
 }
-Ok "ReelForge installed"
+Ok "ShortSmash installed"
 
 # ---------- Voices + fonts (Python one-shot) ----------
 Say "Downloading neural voices (one time, ~250MB)..."
@@ -133,7 +133,7 @@ Ok "Voices + Urdu font ready"
 
 # ---------- First-run init ----------
 Say "First-run setup..."
-& $venvPy -m reelforge.cli init 2>$null | Out-Null
+& $venvPy -m shortsmash.cli init 2>$null | Out-Null
 Ok "Config initialized"
 
 # ---------- Shortcuts (Desktop + Start Menu) ----------
@@ -141,21 +141,21 @@ $launcher = Join-Path $InstallDir "scripts\launch-studio.ps1"
 $Wsh = New-Object -ComObject WScript.Shell
 foreach ($dir in @([IO.Path]::Combine($HOME,"Desktop"),
                    [IO.Path]::Combine($env:APPDATA,"Microsoft\Windows\Start Menu\Programs"))) {
-  $lnk = $Wsh.CreateShortcut((Join-Path $dir "ReelForge Studio.lnk"))
+  $lnk = $Wsh.CreateShortcut((Join-Path $dir "ShortSmash Studio.lnk"))
   $lnk.TargetPath = "powershell.exe"
   $lnk.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$launcher`""
   $lnk.WorkingDirectory = $InstallDir
-  $lnk.Description = "ReelForge Studio - prompt in, viral short out"
+  $lnk.Description = "ShortSmash Studio - prompt in, viral short out"
   $lnk.Save()
 }
 Ok "Shortcuts created (Desktop + Start Menu)"
 
 Write-Host ""
 Write-Host "  ============================================" -ForegroundColor Green
-Write-Host "   Done! ReelForge Studio is installed." -ForegroundColor Green
+Write-Host "   Done! ShortSmash Studio is installed." -ForegroundColor Green
 Write-Host "  ============================================" -ForegroundColor Green
 Write-Host ""
-Say "Launch it anytime from the Desktop or Start Menu: 'ReelForge Studio'"
+Say "Launch it anytime from the Desktop or Start Menu: 'ShortSmash Studio'"
 Say "Or right now:"
 $launch = Read-Host "  Start the Studio now? [Y/n]"
 if ($launch -notmatch '^[nN]') {

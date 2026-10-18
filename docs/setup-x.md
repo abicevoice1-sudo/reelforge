@@ -14,5 +14,5 @@
 
 Notes
 - Free tier: 1,500 posts/month — plenty for a shorts pipeline.
-- Video limits on free/basic: ≤ 512 MB, ≤ 140 s. ReelForge's 9:16 MP4s qualify.
-- ReelForge uploads with the chunked v1.1 media endpoint, then posts via v2.
+- Video limits on free/basic: ≤ 512 MB, ≤ 140 s. ShortSmash's 9:16 MP4s qualify.
+- ShortSmash uploads with the chunked v1.1 media endpoint, then posts via v2.

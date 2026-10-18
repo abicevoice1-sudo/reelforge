@@ -1,8 +1,8 @@
 import pytest
 from pydantic import ValidationError
 
-from reelforge.schemas import AgentJob, EditPlan, Scene
-from reelforge.script import fallback_plan
+from shortsmash.schemas import AgentJob, EditPlan, Scene
+from shortsmash.script import fallback_plan
 
 
 def _scene(**kw):

@@ -1,7 +1,7 @@
 """Configuration: layered YAML file + environment variables.
 
-Precedence: explicit arg > env var > ~/.reelforge/config.yaml > defaults.
-`reelforge init` writes the YAML; API keys live in the environment (or .env).
+Precedence: explicit arg > env var > ~/.shortsmash/config.yaml > defaults.
+`shortsmash init` writes the YAML; API keys live in the environment (or .env).
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-HOME = Path.home() / ".reelforge"
+HOME = Path.home() / ".shortsmash"
 CONFIG_FILE = HOME / "config.yaml"
 PROJECTS_DIR = HOME / "projects"
 QUEUE_DB = HOME / "queue.db"

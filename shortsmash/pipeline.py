@@ -3,7 +3,7 @@
 create_project(topic, duration):
   script (Gemini/template) → voice (Edge-TTS) → stock (Pexels/Pixabay/generated)
   → captions (whisper/fallback) → render (FFmpeg 1080x1920)
-Each stage's artifacts land in ~/.reelforge/projects/<slug>/ so any stage can
+Each stage's artifacts land in ~/.shortsmash/projects/<slug>/ so any stage can
 be re-run or inspected. plan.json is the contract between stages.
 
 publish_project(slug, platforms): uploads final.mp4 via official APIs.

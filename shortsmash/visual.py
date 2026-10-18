@@ -14,7 +14,7 @@ Providers (`visual_provider` in config, default "stock"):
 
 The custom path exists because AI-generated visuals are a paid,
 bring-your-own-key world with a different API per vendor — so instead
-of shipping one half-working integration, ReelForge shells out to
+of shipping one half-working integration, ShortSmash shells out to
 whatever you already use. The vision gate still checks the result.
 """
 from __future__ import annotations

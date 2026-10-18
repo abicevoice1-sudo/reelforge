@@ -1,6 +1,6 @@
 """Tests for the plain-text script format (reasoning-LLM path)."""
 
-from reelforge.plain_script import parse_plan
+from shortsmash.plain_script import parse_plan
 
 SAMPLE = """TITLE: Biryani Like You've Never Seen
 HOOK: Hyderabad's biryani has a 400-year-old secret.
@@ -39,7 +39,7 @@ def test_parse_plan_rejects_garbage():
 
 
 def test_rank_hits_prefers_tag_overlap():
-    from reelforge.stock import _rank_hits
+    from shortsmash.stock import _rank_hits
     hits = [
         {"tags": "pasta, italian, food", "id": 1},
         {"tags": "biryani, rice, indian food", "id": 2},
@@ -51,7 +51,7 @@ def test_rank_hits_prefers_tag_overlap():
 
 
 def test_rank_hits_deterministic_with_seed():
-    from reelforge.stock import _rank_hits
+    from shortsmash.stock import _rank_hits
     hits = [{"tags": "biryani rice", "id": i} for i in range(5)]
     a = [h["id"] for h in _rank_hits(hits, "biryani", seed=7)]
     b = [h["id"] for h in _rank_hits(hits, "biryani", seed=7)]

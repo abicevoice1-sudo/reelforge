@@ -1,20 +1,20 @@
 # MCP server
 
-Let AI agents drive the video factory. The MCP server exposes ReelForge as
+Let AI agents drive the video factory. The MCP server exposes ShortSmash as
 tools over stdio for Claude Code, Cursor, Windsurf, or any MCP client.
 
 ## Setup
 
 ```bash
-pip install 'reelforge[mcp]'
+pip install 'shortsmash[mcp]'
 ```
 
 Add to your MCP client config (e.g. `~/.claude.json` or Cursor settings):
 
 ```json
-{"mcpServers": {"reelforge": {
-    "command": "/path/to/reelforge/.venv/bin/python",
-    "args": ["-m", "reelforge.mcp_server"]
+{"mcpServers": {"shortsmash": {
+    "command": "/path/to/shortsmash/.venv/bin/python",
+    "args": ["-m", "shortsmash.mcp_server"]
 }}}
 ```
 

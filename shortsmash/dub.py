@@ -1,6 +1,6 @@
 """Dubbing: re-voice a finished project in another language.
 
-`reelforge dub <slug> --lang ur` →
+`shortsmash dub <slug> --lang ur` →
   1. translates each scene's voiceover via the LLM,
   2. re-synthesizes narration with a native neural voice,
   3. re-renders with the same verified clips, new captions.

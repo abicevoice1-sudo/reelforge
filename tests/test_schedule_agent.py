@@ -1,9 +1,9 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from reelforge import agent
-from reelforge.config import Config
-from reelforge.schedule import parse_when
+from shortsmash import agent
+from shortsmash.config import Config
+from shortsmash.schedule import parse_when
 
 
 def test_parse_when_friday_6pm():

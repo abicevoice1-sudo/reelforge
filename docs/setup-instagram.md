@@ -16,9 +16,9 @@ Prerequisites: an Instagram **Business or Creator** account linked to a Facebook
 
 The MP4 must be at a **public https URL** — Meta's servers download it.
 Options: your own site/CDN, Cloudflare R2, or any static host. Then either:
-- `reelforge publish <slug> --platforms instagram --video-url https://…/final.mp4`, or
-- set `public_video_url` in `~/.reelforge/config.yaml`.
+- `shortsmash publish <slug> --platforms instagram --video-url https://…/final.mp4`, or
+- set `public_video_url` in `~/.shortsmash/config.yaml`.
 
 Notes
-- Reels: 3s–15 min, 9:16 recommended, ≤ 1 GB. ReelForge renders exactly that.
-- Container processing takes ~30s; ReelForge polls until it's ready, then publishes.
+- Reels: 3s–15 min, 9:16 recommended, ≤ 1 GB. ShortSmash renders exactly that.
+- Container processing takes ~30s; ShortSmash polls until it's ready, then publishes.

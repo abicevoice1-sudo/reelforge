@@ -1,19 +1,19 @@
 @echo off
 setlocal enabledelayedexpansion
-title ReelForge One-Click Setup
-:: ReelForge one-click installer for Windows CMD.
+title ShortSmash One-Click Setup
+:: ShortSmash one-click installer for Windows CMD.
 :: One-line install from CMD:
-::   curl -L -o "%TEMP%\rf-install.cmd" "https://raw.githubusercontent.com/abicevoice1-sudo/reelforge/main/install.cmd" && "%TEMP%\rf-install.cmd"
+::   curl -L -o "%TEMP%\rf-install.cmd" "https://raw.githubusercontent.com/abicevoice1-sudo/shortsmash/main/install.cmd" && "%TEMP%\rf-install.cmd"
 :: Does everything: Python, FFmpeg, repo, venv, voices, fonts, shortcuts.
 
 echo.
 echo  ============================================
-echo   ReelForge one-click setup (CMD)
+echo   ShortSmash one-click setup (CMD)
 echo  ============================================
 echo.
 
-set "INSTALLDIR=%USERPROFILE%\ReelForge"
-set "REPO=https://github.com/abicevoice1-sudo/reelforge.git"
+set "INSTALLDIR=%USERPROFILE%\ShortSmash"
+set "REPO=https://github.com/abicevoice1-sudo/shortsmash.git"
 
 :: ---------- winget check ----------
 where winget >nul 2>&1
@@ -70,17 +70,17 @@ if %errorlevel%==0 (
     echo  [*] Updating existing install...
     git -C "%INSTALLDIR%" pull --ff-only >nul 2>&1
   ) else (
-    echo  [*] Cloning ReelForge...
+    echo  [*] Cloning ShortSmash...
     git clone --depth 1 "%REPO%" "%INSTALLDIR%"
   )
 ) else (
-  echo  [*] Downloading ReelForge zip (no git found)...
-  curl -L -o "%TEMP%\reelforge.zip" "https://github.com/abicevoice1-sudo/reelforge/archive/refs/heads/main.zip"
-  powershell -NoProfile -Command "Expand-Archive -Path '%TEMP%\reelforge.zip' -DestinationPath '%TEMP%' -Force"
+  echo  [*] Downloading ShortSmash zip (no git found)...
+  curl -L -o "%TEMP%\shortsmash.zip" "https://github.com/abicevoice1-sudo/shortsmash/archive/refs/heads/main.zip"
+  powershell -NoProfile -Command "Expand-Archive -Path '%TEMP%\shortsmash.zip' -DestinationPath '%TEMP%' -Force"
   if exist "%INSTALLDIR%" rmdir /s /q "%INSTALLDIR%"
-  move "%TEMP%\reelforge-main" "%INSTALLDIR%" >nul
+  move "%TEMP%\shortsmash-main" "%INSTALLDIR%" >nul
 )
-echo  [OK] ReelForge code ready
+echo  [OK] ShortSmash code ready
 
 :: ---------- venv + install ----------
 cd /d "%INSTALLDIR%"
@@ -88,7 +88,7 @@ if not exist ".venv\Scripts\python.exe" (
   echo  [*] Creating virtual environment...
   python -m venv .venv
 )
-echo  [*] Installing ReelForge (a few minutes)...
+echo  [*] Installing ShortSmash (a few minutes)...
 .venv\Scripts\python.exe -m pip install -q --upgrade pip >nul 2>&1
 set "EXTRAS=ai,voice,web,mcp,trends,bluesky,threads,youtube,x,schedule,captions"
 if %SKIP_VISION%==0 set "EXTRAS=%EXTRAS%,vision"
@@ -97,11 +97,11 @@ if %errorlevel% neq 0 (
   echo  [!!] Retrying without vision extra...
   .venv\Scripts\pip.exe install -q -e ".[ai,voice,web,mcp,trends,bluesky,threads,youtube,x,schedule,captions]"
   if %errorlevel% neq 0 (
-    echo  [X] pip install failed. Re-run, or paste the error on the ReelForge repo.
+    echo  [X] pip install failed. Re-run, or paste the error on the ShortSmash repo.
     pause & exit /b 1
   )
 )
-echo  [OK] ReelForge installed
+echo  [OK] ShortSmash installed
 
 :: ---------- Voices + font ----------
 echo  [*] Downloading neural voices (one time)...
@@ -110,12 +110,12 @@ echo  [OK] Voices ready
 
 :: ---------- Shortcuts ----------
 echo  [*] Creating shortcuts...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws=New-Object -ComObject WScript.Shell; foreach($d in @(\"$env:USERPROFILE\Desktop\", \"$env:APPDATA\Microsoft\Windows\Start Menu\Programs\")) { $l=$ws.CreateShortcut(\"$d\ReelForge Studio.lnk\"); $l.TargetPath='powershell.exe'; $l.Arguments='-NoProfile -ExecutionPolicy Bypass -File \"%INSTALLDIR%\scripts\launch-studio.ps1\"'; $l.WorkingDirectory='%INSTALLDIR%'; $l.Description='ReelForge Studio'; $l.Save() }"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws=New-Object -ComObject WScript.Shell; foreach($d in @(\"$env:USERPROFILE\Desktop\", \"$env:APPDATA\Microsoft\Windows\Start Menu\Programs\")) { $l=$ws.CreateShortcut(\"$d\ShortSmash Studio.lnk\"); $l.TargetPath='powershell.exe'; $l.Arguments='-NoProfile -ExecutionPolicy Bypass -File \"%INSTALLDIR%\scripts\launch-studio.ps1\"'; $l.WorkingDirectory='%INSTALLDIR%'; $l.Description='ShortSmash Studio'; $l.Save() }"
 echo  [OK] Shortcuts created (Desktop + Start Menu)
 
 echo.
 echo  ============================================
-echo   Done! Launch "ReelForge Studio" from
+echo   Done! Launch "ShortSmash Studio" from
 echo   your Desktop or Start Menu.
 echo  ============================================
 echo.

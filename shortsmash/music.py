@@ -2,7 +2,7 @@
 
 Source priority:
 1. `music_file` in config — explicit track.
-2. `~/.reelforge/music/` — drop royalty-free MP3s here; one is picked by mood
+2. `~/.shortsmash/music/` — drop royalty-free MP3s here; one is picked by mood
    keyword in the filename (e.g. `upbeat-summer.mp3`), else at random. If the
    library is empty, :func:`ensure_library` downloads the built-in starter
    tracks (CC-BY, attribution in ATTRIBUTION.md) so a render never ships

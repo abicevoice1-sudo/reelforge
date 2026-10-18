@@ -15,4 +15,4 @@
 
 Notes
 - Direct-post to public requires an approved (audited) app; sandbox posts are private to you — perfect for testing.
-- ReelForge uses the FILE_UPLOAD flow (chunked PUT), which works for videos up to 10 min.
+- ShortSmash uses the FILE_UPLOAD flow (chunked PUT), which works for videos up to 10 min.

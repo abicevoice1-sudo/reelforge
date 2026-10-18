@@ -14,7 +14,7 @@ ADAPTERS = ("youtube", "tiktok", "instagram", "x", "threads", "bluesky",
 
 # What each platform needs before it can post. Used by the Studio dashboard
 # to show per-platform readiness at a glance. Values are env var names;
-# "file:..." means a file must exist under ~/.reelforge/.
+# "file:..." means a file must exist under ~/.shortsmash/.
 PLATFORM_REQUIREMENTS = {
     "youtube": ("file:youtube_client.json",),
     "tiktok": ("TIKTOK_ACCESS_TOKEN",),

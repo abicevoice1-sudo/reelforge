@@ -26,7 +26,7 @@ def publish(video: Path, title: str, description: str, hashtags: list[str],
     try:
         import tweepy
     except ImportError as exc:
-        raise RuntimeError("pip install 'reelforge[x]' first.") from exc
+        raise RuntimeError("pip install 'shortsmash[x]' first.") from exc
 
     auth = tweepy.OAuth1UserHandler(
         cfg.require("k", "X_API_KEY", "X posting"),

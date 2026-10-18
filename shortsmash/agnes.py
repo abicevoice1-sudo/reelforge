@@ -2,7 +2,7 @@
 
 Agnes AI (Singapore) offers genuinely free text-to-video via an
 OpenAI-compatible API — no credit card, no GPU needed. This wires it into
-ReelForge as a visual provider: each scene's cinematic shot list becomes
+ShortSmash as a visual provider: each scene's cinematic shot list becomes
 an AI-generated clip instead of stock footage.
 
 Setup:
@@ -125,7 +125,7 @@ def generate(prompt: str, out: Path, cfg: Config,
 
 def _download(url: str, out: Path) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
-    req = urllib.request.Request(url, headers={"User-Agent": "ReelForge/1.0"})
+    req = urllib.request.Request(url, headers={"User-Agent": "ShortSmash/1.0"})
     with urllib.request.urlopen(req, timeout=300) as r, open(out, "wb") as f:
         while chunk := r.read(1 << 20):
             f.write(chunk)

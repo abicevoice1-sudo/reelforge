@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
-# ReelForge one-click setup. Works on Linux, macOS, and Windows (Git Bash).
+# ShortSmash one-click setup. Works on Linux, macOS, and Windows (Git Bash).
 #
 #   ./install.sh
 #
 # One command. Walk away. Come back to a working AI video studio.
 # Installs: Python venv, all dependencies, CLIP vision model (offline
 # footage gate), Piper neural voices (English + Urdu, offline), starter
-# music library, default config. Then runs `reelforge doctor`.
+# music library, default config. Then runs `shortsmash doctor`.
 #
 # After it finishes:
 #   Linux/macOS:  source .venv/bin/activate
 #   Windows:      source .venv/Scripts/activate
-#   reelforge serve   # → open http://127.0.0.1:8000 for the Studio dashboard
+#   shortsmash serve   # → open http://127.0.0.1:8000 for the Studio dashboard
 set -euo pipefail
 # Support `curl ... | bash`: no repo on disk yet -> clone it first.
 if [ ! -f "$(dirname "$0")/pyproject.toml" ]; then
   command -v git >/dev/null 2>&1 || { echo "git is required for the one-line install. Install git, then re-run."; exit 1; }
-  TARGET="$HOME/reelforge"
+  TARGET="$HOME/shortsmash"
   if [ -d "$TARGET/.git" ]; then
     git -C "$TARGET" pull --ff-only >/dev/null 2>&1 || true
   else
-    git clone --depth 1 https://github.com/abicevoice1-sudo/reelforge.git "$TARGET"
+    git clone --depth 1 https://github.com/abicevoice1-sudo/shortsmash.git "$TARGET"
   fi
   cd "$TARGET"
 else
@@ -74,7 +74,7 @@ fi
 [ -x "$VBIN/python" ] || [ -x "$VBIN/python.exe" ] || fail "venv python not found at $VBIN"
 ok "venv ready"
 
-say "Installing ReelForge + all features (this is the long step — one time only)"
+say "Installing ShortSmash + all features (this is the long step — one time only)"
 "$VBIN/python" -m pip -q install --upgrade pip
 EXTRAS="ai,voice,web,mcp,trends,bluesky,threads,youtube,x,schedule,captions"
 if [ "$SKIP_VISION" -eq 0 ]; then
@@ -90,7 +90,7 @@ ok "dependencies installed"
 
 if [ "$SKIP_VISION" -eq 0 ]; then
   say "Downloading CLIP vision model (offline footage gate, ~600MB, one time)"
-  "$VBIN/python" -c "from reelforge.vision_local import ensure_model; ensure_model(); print('clip ok')" \
+  "$VBIN/python" -c "from shortsmash.vision_local import ensure_model; ensure_model(); print('clip ok')" \
     || warn "vision model download failed — footage gate will use Gemini only."
   ok "vision model ready"
 else
@@ -132,17 +132,17 @@ fi
 ok "caption font ready"
 
 say "Setting up config + starter music"
-"$VBIN/python" -m reelforge.cli init >/dev/null 2>&1 || true
-"$VBIN/python" -c "from reelforge.music import ensure_library; ensure_library(); print('music ok')" || true
+"$VBIN/python" -m shortsmash.cli init >/dev/null 2>&1 || true
+"$VBIN/python" -c "from shortsmash.music import ensure_library; ensure_library(); print('music ok')" || true
 ok "config + music ready"
 
 say "Running health check"
-"$VBIN/python" -m reelforge.cli doctor || true
+"$VBIN/python" -m shortsmash.cli doctor || true
 
 printf '\n\033[1;32m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n'
-printf '\033[1;32m🎉 ReelForge is ready.\033[0m\n\n'
+printf '\033[1;32m🎉 ShortSmash is ready.\033[0m\n\n'
 printf '  %s\n' "$ACTIVATE"
-printf '  reelforge serve   →  open http://127.0.0.1:8000\n\n'
+printf '  shortsmash serve   →  open http://127.0.0.1:8000\n\n'
 printf 'Make your first video from the Studio dashboard, then hit the\n'
 printf '🚀 Publish tab to post it to 8 platforms in one click.\n'
 printf '\033[1;32m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n'

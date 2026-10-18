@@ -6,7 +6,7 @@ Hard rules (non-negotiable, by design):
   it violates every platform's ToS, and it gets accounts banned.
 - Drafts are clearly labeled AI-suggested; you can edit before approving.
 
-Flow: `reelforge engage --platform youtube` → pulls recent comments on your
+Flow: `shortsmash engage --platform youtube` → pulls recent comments on your
 latest videos → Gemini drafts a warm, on-brand reply per comment → you tap
 [a]pprove / [e]dit / [s]kip → approved replies post via the official API.
 """

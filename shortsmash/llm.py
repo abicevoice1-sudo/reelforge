@@ -254,7 +254,7 @@ def _gemini(system: str | None, user: str, cfg: Config,
         try:
             import google.generativeai as genai
         except ImportError as exc:
-            raise RuntimeError("pip install 'reelforge[ai]' first.") from exc
+            raise RuntimeError("pip install 'shortsmash[ai]' first.") from exc
         genai.configure(api_key=cfg.gemini_key())
         gmodel = genai.GenerativeModel(
             model,

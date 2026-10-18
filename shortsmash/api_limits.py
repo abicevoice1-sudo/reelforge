@@ -1,4 +1,4 @@
-"""Free-tier API limit tracking. Knows every API ReelForge uses, its free
+"""Free-tier API limit tracking. Knows every API ShortSmash uses, its free
 limits, and today's usage — so auto-generation never burns quota blind."""
 
 from __future__ import annotations
@@ -140,7 +140,7 @@ APIS = {
 
 
 def _db() -> sqlite3.Connection:
-    p = Path.home() / ".reelforge" / "usage.db"
+    p = Path.home() / ".shortsmash" / "usage.db"
     p.parent.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(p)
     con.execute("CREATE TABLE IF NOT EXISTS usage (api TEXT, day TEXT, calls INT, PRIMARY KEY (api, day))")

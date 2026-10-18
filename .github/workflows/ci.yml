@@ -9,4 +9,4 @@ jobs:
         with: {python-version: "3.12"}
       - run: pip install -e '.[ai,voice,captions,trends,mcp,web]' pytest
       - run: python -m pytest tests/ -q
-      - run: python -m ruff check reelforge/ 2>/dev/null || echo "ruff not installed, skipping"
+      - run: python -m ruff check shortsmash/ 2>/dev/null || echo "ruff not installed, skipping"

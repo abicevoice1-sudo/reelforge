@@ -1,11 +1,11 @@
 @echo off
 setlocal enabledelayedexpansion
-title ReelForge Setup
+title ShortSmash Setup
 cd /d "%~dp0"
 
 echo.
 echo  ============================================
-echo   ReelForge one-click setup
+echo   ShortSmash one-click setup
 echo  ============================================
 echo.
 
@@ -68,7 +68,7 @@ echo  [OK] Virtual environment ready
 
 :: ---------- dependencies ----------
 echo.
-echo  [*] Installing ReelForge - this is the long step, one time only.
+echo  [*] Installing ShortSmash - this is the long step, one time only.
 echo      Go grab a coffee, this takes 5-15 minutes.
 echo.
 ".venv\Scripts\python" -m pip install --upgrade pip --quiet
@@ -91,7 +91,7 @@ echo  [OK] Dependencies installed
 if %SKIP_VISION% EQU 0 (
   echo.
   echo  [*] Downloading footage-check model (~600MB, one time)...
-  ".venv\Scripts\python" -c "from reelforge.vision_local import ensure_model; ensure_model()"
+  ".venv\Scripts\python" -c "from shortsmash.vision_local import ensure_model; ensure_model()"
   echo  [OK] Footage check ready
 ) else (
   echo  [!] Skipped footage-check model (needs torch).
@@ -136,29 +136,29 @@ echo  [OK] Font ready
 :: ---------- config + music ----------
 echo.
 echo  [*] Setting up config and starter music...
-".venv\Scripts\python" -m reelforge.cli init >nul 2>&1
-".venv\Scripts\python" -c "from reelforge.music import ensure_library; ensure_library()" >nul 2>&1
+".venv\Scripts\python" -m shortsmash.cli init >nul 2>&1
+".venv\Scripts\python" -c "from shortsmash.music import ensure_library; ensure_library()" >nul 2>&1
 echo  [OK] Config ready
 
 :: ---------- health check ----------
 echo.
 echo  [*] Health check...
-".venv\Scripts\python" -m reelforge.cli doctor
+".venv\Scripts\python" -m shortsmash.cli doctor
 
 echo.
 echo  ============================================
-echo   ReelForge is ready!
+echo   ShortSmash is ready!
 echo  ============================================
 echo.
 set /p RUNNOW="  Start the Studio server now? [Y/n]: "
 if /i "%RUNNOW%"=="n" goto :skipserver
 if /i "%RUNNOW%"=="no" goto :skipserver
 echo.
-echo  [*] Starting ReelForge Studio...
+echo  [*] Starting ShortSmash Studio...
 echo      Open http://127.0.0.1:8000 in your browser.
 echo      Press Ctrl+C in this window to stop the server.
 echo.
-".venv\Scripts\reelforge" serve
+".venv\Scripts\shortsmash" serve
 goto :end
 
 :skipserver
@@ -166,7 +166,7 @@ echo.
 echo   When you're ready, run:
 echo.
 echo     .venv\Scripts\activate
-echo     reelforge serve
+echo     shortsmash serve
 echo.
 echo   Then open http://127.0.0.1:8000 in your browser.
 echo.

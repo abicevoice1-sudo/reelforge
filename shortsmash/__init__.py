@@ -1,4 +1,4 @@
-"""ReelForge — prompt in, viral short out.
+"""ShortSmash — prompt in, viral short out.
 
 An AI video studio: Gemini writes the script and edit plan, Edge-TTS voices it,
 Pexels/Pixabay supply the footage, FFmpeg cuts it into a captioned 9:16 short,

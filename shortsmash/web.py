@@ -1,6 +1,6 @@
-"""ReelForge Studio — web UI.
+"""ShortSmash Studio — web UI.
 
-`reelforge serve` → open http://localhost:8000
+`shortsmash serve` → open http://localhost:8000
 
 Tabs: Studio (prompt → video), Trends (what's hot), Library (preview,
 publish, stats). Generation runs in background threads; the UI polls.
@@ -21,7 +21,7 @@ from . import trends as trends_mod
 from .config import PROJECTS_DIR, Config
 from .publish import ADAPTERS, platform_status, publish as publish_adapter
 
-app = FastAPI(title="ReelForge Studio")
+app = FastAPI(title="ShortSmash Studio")
 
 _jobs: dict[str, dict] = {}
 
@@ -48,7 +48,7 @@ def _run_generation(job_id: str, topic: str, duration: int, language: str = "en"
                     ratio: str = "9:16"):
     _jobs[job_id] = {"status": "running", "topic": topic, "started": time.time()}
     try:
-        from reelforge.edit import ASPECT_RATIOS
+        from shortsmash.edit import ASPECT_RATIOS
         overrides = {}
         if ratio in ASPECT_RATIOS:
             overrides["width"] = ASPECT_RATIOS[ratio]["w"]
@@ -58,7 +58,7 @@ def _run_generation(job_id: str, topic: str, duration: int, language: str = "en"
         slug = workdir.name
         if language and language != "en":
             _jobs[job_id]["status"] = "dubbing"
-            from reelforge import dub as dub_mod
+            from shortsmash import dub as dub_mod
             dub_mod.dub_project(slug, language, cfg)
             slug = f"{slug}-dub-{language}"
         _jobs[job_id] = {"status": "done", "slug": slug,
@@ -111,7 +111,7 @@ _CONNECT_GUIDES = {
     "youtube": [
         "Go to console.cloud.google.com → create a project → enable YouTube Data API v3.",
         "Create OAuth credentials (Desktop app), download the JSON.",
-        "Save it as <b>~/.reelforge/youtube_client.json</b>.",
+        "Save it as <b>~/.shortsmash/youtube_client.json</b>.",
         "Run any publish once — a browser window asks you to grant access, then it's saved.",
     ],
     "tiktok": [
@@ -196,23 +196,23 @@ def _read_env_file() -> dict:
 
 @app.get("/api/languages")
 def list_languages():
-    from reelforge.voice import DUB_LANGUAGES
+    from shortsmash.voice import DUB_LANGUAGES
     return {"languages": [{"code": c, "name": n} for c, n in DUB_LANGUAGES.items()]}
 
 
 @app.get("/api/limits")
 def api_limits():
-    from reelforge import api_limits as lim
+    from shortsmash import api_limits as lim
     return {"apis": lim.status(), "videos_possible": lim.videos_possible_today()}
 
 
 @app.get("/api/ratios")
 def list_ratios():
-    from reelforge.edit import ASPECT_RATIOS
+    from shortsmash.edit import ASPECT_RATIOS
     return {"ratios": [{"key": k, **v} for k, v in ASPECT_RATIOS.items()]}
 
 
-_AUTO_CFG = Path.home() / ".reelforge" / "auto.json"
+_AUTO_CFG = Path.home() / ".shortsmash" / "auto.json"
 
 
 def _load_auto() -> dict:
@@ -234,7 +234,7 @@ class AutoRequest(BaseModel):
 
 @app.get("/api/auto")
 def get_auto():
-    from reelforge import schedule as sched
+    from shortsmash import schedule as sched
     cfg = _load_auto()
     cfg["queued"] = len(sched.list_jobs("queued"))
     return cfg
@@ -244,7 +244,7 @@ def get_auto():
 def set_auto(req: AutoRequest):
     import json as _json
     from datetime import datetime, timedelta
-    from reelforge import schedule as sched
+    from shortsmash import schedule as sched
     cfg = {"enabled": req.enabled, "niche": req.niche,
            "per_day": max(1, min(5, req.per_day)),
            "platforms": req.platforms, "language": req.language,
@@ -254,7 +254,7 @@ def set_auto(req: AutoRequest):
     # Queue today's generation jobs immediately when enabling
     queued = 0
     if req.enabled and req.niche.strip():
-        from reelforge import api_limits as lim
+        from shortsmash import api_limits as lim
         possible = lim.videos_possible_today()
         n = min(cfg["per_day"], max(0, possible))
         now = datetime.now()
@@ -276,7 +276,7 @@ class LyricsRequest(BaseModel):
 
 @app.post("/api/lyrics")
 def api_lyrics(req: LyricsRequest):
-    from reelforge import pipeline as pipe_mod
+    from shortsmash import pipeline as pipe_mod
     cfg = Config()
     workdir = pipe_mod.create_lyrics_project(req.lyrics, req.title,
                                              max(5, min(180, req.duration)), cfg)
@@ -343,7 +343,7 @@ def save_settings(req: SettingsRequest):
 def voice_sample(lang: str = "en"):
     """Generate a short voice sample so users can hear the quality."""
     import tempfile
-    from reelforge import voice as voice_mod
+    from shortsmash import voice as voice_mod
     samples = {
         "en": "Hello! This is how your videos will sound.",
         "ur": "السلام علیکم! آپ کی ویڈیوز ایسی آواز میں ہوں گی۔",
@@ -353,7 +353,7 @@ def voice_sample(lang: str = "en"):
         "es": "¡Hola! Así sonarán tus videos.",
     }
     text = samples.get(lang, samples["en"])
-    out = Path(tempfile.gettempdir()) / f"reelforge-voice-{lang}.mp3"
+    out = Path(tempfile.gettempdir()) / f"shortsmash-voice-{lang}.mp3"
     v = (voice_mod.SAMPLE_VOICES.get(lang) or voice_mod.SAMPLE_VOICES["en"])[0]
     cfg = Config(overrides={"voice": v})
     voice_mod.synthesize_scene(text, out, cfg)
@@ -443,7 +443,7 @@ def index():
 HTML_PAGE = """<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ReelForge Studio ⚒️</title>
+<title>ShortSmash Studio ⚒️</title>
 <style>
 :root{--bg:#0a0d13;--panel:#12161f;--panel2:#0d1119;--line:#222a3d;--line2:#2c3650;
 --txt:#eef1f7;--dim:#8f99ae;--dim2:#6b7488;
@@ -570,7 +570,7 @@ h3 .sub{font-weight:500;font-size:13px;color:var(--dim);margin-left:10px}
 <div id="t-studio" class="tab on">
  <div class="panel hero" id="welcome">
   <h2>Turn any idea into a viral short. <span>Free, forever.</span></h2>
-  <p>Pick a template below, or describe your own topic. ReelForge writes the script,
+  <p>Pick a template below, or describe your own topic. ShortSmash writes the script,
   narrates it, finds the footage, adds karaoke captions, and renders a 1080×1920
   video — then publishes it to 10 platforms in one click. <b>50 languages</b> supported.</p>
   <button class="ghost" onclick="document.getElementById('welcome').style.display='none'">Got it — hide this</button>
@@ -595,7 +595,7 @@ h3 .sub{font-weight:500;font-size:13px;color:var(--dim);margin-left:10px}
     <button class="go" id="genbtn" onclick="generate()">Forge ⚒️</button></div>
   </div>
   <p class="log" id="genlog"></p>
-  <p class="log" style="margin-top:8px">🌍 <b>50 languages, one click.</b> Pick Urdu, Hindi, Chinese, Arabic, Spanish… and ReelForge
+  <p class="log" style="margin-top:8px">🌍 <b>50 languages, one click.</b> Pick Urdu, Hindi, Chinese, Arabic, Spanish… and ShortSmash
   dubs the entire video — native human-like voice, translated captions, RTL-correct. No other free tool does this.</p>
   <div class="apistat" id="apistat"></div>
  </div>
@@ -637,9 +637,9 @@ h3 .sub{font-weight:500;font-size:13px;color:var(--dim);margin-left:10px}
  <div id="statlist"></div></div></div>
 <div id="t-auto" class="tab">
  <div class="panel hero"><h2>🤖 Autopilot. <span>Videos while you sleep.</span></h2>
-  <p>Pick a niche. ReelForge harvests trends, generates videos, dubs them, and
+  <p>Pick a niche. ShortSmash harvests trends, generates videos, dubs them, and
   publishes on schedule — <b>respecting every API's free limits automatically</b>.
-  Keep <b>reelforge worker</b> running (or the Studio server) to process the queue.</p>
+  Keep <b>shortsmash worker</b> running (or the Studio server) to process the queue.</p>
  </div>
  <div class="panel"><h3>⚙️ Autopilot settings</h3>
   <div class="row">
@@ -662,7 +662,7 @@ h3 .sub{font-weight:500;font-size:13px;color:var(--dim);margin-left:10px}
 </div>
 <div id="t-lyrics" class="tab">
  <div class="panel"><h3>🎵 Lyrics video <span class="sub">karaoke-style, word-by-word</span></h3>
-  <p class="log">Paste lyrics — one line per screen. ReelForge times each line across
+  <p class="log">Paste lyrics — one line per screen. ShortSmash times each line across
   the video, highlights words karaoke-style, and renders over cinematic footage with music.</p>
   <div style="margin-bottom:12px"><label>Song title</label>
    <input id="lyr_title" placeholder="e.g. Midnight Dreams"></div>
@@ -678,14 +678,14 @@ h3 .sub{font-weight:500;font-size:13px;color:var(--dim);margin-left:10px}
  </div>
 </div>
 <div id="t-settings" class="tab">
- <div class="panel"><h3>⚙️ Settings <span class="sub">every API ReelForge uses, in one place</span></h3>
+ <div class="panel"><h3>⚙️ Settings <span class="sub">every API ShortSmash uses, in one place</span></h3>
   <p class="log">Keys are stored in a <b>.env</b> file next to the app — never shown back, never uploaded anywhere.</p>
   <div id="keyform"></div>
   <div style="margin-top:14px"><button class="go" onclick="saveSettings()">Save keys</button>
   <span class="log" id="savemsg" style="margin-left:12px"></span></div>
  </div>
  <div class="panel"><h3>🎙️ Voice</h3>
-  <p class="log">ReelForge uses the most human-like free voice available, automatically:</p>
+  <p class="log">ShortSmash uses the most human-like free voice available, automatically:</p>
   <p class="log" style="margin-top:8px"><b>1. Edge-TTS</b> (Microsoft neural — studio quality, needs internet, no key)<br>
   <b>2. Piper</b> (offline neural — ships with the app, 4 languages)<br>
   <b>3. gTTS</b> (last resort)</p>
@@ -758,8 +758,8 @@ function friendlyError(e){
  if(!e) return 'Something went wrong.';
  if(/non-zero exit status|ffmpeg/i.test(e)){
   if(/fontfile|drawtext|vignette|gradients/i.test(e))
-   return 'Video renderer crashed (usually a font or filter issue on Windows). Try again — if it repeats, run `reelforge doctor`.';
-  return 'Video rendering failed. Run `reelforge doctor` to check ffmpeg.';
+   return 'Video renderer crashed (usually a font or filter issue on Windows). Try again — if it repeats, run `shortsmash doctor`.';
+  return 'Video rendering failed. Run `shortsmash doctor` to check ffmpeg.';
  }
  if(/pixabay|pexels|api key|401|403/i.test(e))
   return 'Stock footage API issue — check your API key, or the video will use placeholder visuals.';
