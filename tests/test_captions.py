@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from reelforge.captions import Word, build_ass, distribute_words
+from reelforge.captions import RLM, Word, _is_rtl, build_ass, distribute_words
 from reelforge.music import duck_expression, speech_segments
 from reelforge.schemas import Scene
 
@@ -23,6 +23,34 @@ def test_build_ass_karaoke(tmp_path: Path):
     assert "\\kf" in text  # karaoke timing tags
     assert "hello" in text and "world" in text
     assert "PlayResX: 1080" in text
+    assert RLM not in text  # English stays left-to-right
+
+
+def test_build_ass_rtl_urdu(tmp_path: Path):
+    """Urdu captions must carry a right-to-left mark so libass lays them
+    out RTL (first spoken word at the right), not LTR like English."""
+    words = [Word("نویں", 0.0, 0.5), Word("صدی", 0.5, 1.0)]
+    out = tmp_path / "u.ass"
+    build_ass(words, out, style="karaoke")
+    text = out.read_text()
+    assert _is_rtl("نویں صدی")
+    assert not _is_rtl("hello world")
+    # RLM is the very first content char of the dialogue text,
+    # before any karaoke override blocks.
+    for line in text.splitlines():
+        if line.startswith("Dialogue:"):
+            payload = line.split(",", 9)[9]
+            assert payload.startswith(RLM), payload[:20]
+
+
+def test_build_ass_rtl_overlay(tmp_path: Path):
+    out = tmp_path / "o.ass"
+    build_ass([Word("test", 0.0, 1.0)], out,
+              overlays=[{"start": 0.0, "end": 1.0, "text": "تم عادی ہو",
+                         "kind": "hook"}])
+    text = out.read_text()
+    hook = [l for l in text.splitlines() if ",Hook," in l][0]
+    assert hook.split(",", 9)[9].startswith(RLM)
 
 
 def test_speech_segments_merge():
