@@ -1,0 +1,125 @@
+@echo off
+setlocal enabledelayedexpansion
+title ReelForge One-Click Setup
+:: ReelForge one-click installer for Windows CMD.
+:: One-line install from CMD:
+::   curl -L -o "%TEMP%\rf-install.cmd" "https://raw.githubusercontent.com/abicevoice1-sudo/reelforge/main/install.cmd" && "%TEMP%\rf-install.cmd"
+:: Does everything: Python, FFmpeg, repo, venv, voices, fonts, shortcuts.
+
+echo.
+echo  ============================================
+echo   ReelForge one-click setup (CMD)
+echo  ============================================
+echo.
+
+set "INSTALLDIR=%USERPROFILE%\ReelForge"
+set "REPO=https://github.com/abicevoice1-sudo/reelforge.git"
+
+:: ---------- winget check ----------
+where winget >nul 2>&1
+if %errorlevel% neq 0 (
+  echo  [X] winget not found. Install "App Installer" from the Microsoft Store, then re-run.
+  pause & exit /b 1
+)
+echo  [OK] winget present
+
+:: ---------- Python ----------
+where python >nul 2>&1
+if %errorlevel% neq 0 (
+  echo  [*] Installing Python 3.12 via winget...
+  winget install -e --id Python.Python.3.12 --silent --accept-package-agreements --accept-source-agreements
+  :: refresh PATH for this session
+  for /f "tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path 2^>nul') do set "MACHINEPATH=%%b"
+  for /f "tokens=2*" %%a in ('reg query "HKCU\Environment" /v Path 2^>nul') do set "USERPATH=%%b"
+  set "PATH=%MACHINEPATH%;%USERPATH%"
+)
+where python >nul 2>&1
+if %errorlevel% neq 0 (
+  echo  [X] Python install failed. Install from python.org (tick "Add to PATH"), then re-run.
+  pause & exit /b 1
+)
+for /f "tokens=2" %%v in ('python --version 2^>^&1') do set PYV=%%v
+echo  [OK] Python %PYV%
+set SKIP_VISION=0
+for /f "tokens=1,2 delims=." %%a in ("%PYV%") do (
+  if %%a GTR 3 set SKIP_VISION=1
+  if %%a EQU 3 if %%b GEQ 14 set SKIP_VISION=1
+)
+if %SKIP_VISION%==1 echo  [!!] Python %PYV% has no torch wheels yet - vision checks skipped.
+
+:: ---------- FFmpeg ----------
+where ffmpeg >nul 2>&1
+if %errorlevel% neq 0 (
+  echo  [*] Installing FFmpeg via winget...
+  winget install -e --id Gyan.FFmpeg --silent --accept-package-agreements --accept-source-agreements
+  for /f "tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path 2^>nul') do set "MACHINEPATH=%%b"
+  for /f "tokens=2*" %%a in ('reg query "HKCU\Environment" /v Path 2^>nul') do set "USERPATH=%%b"
+  set "PATH=%MACHINEPATH%;%USERPATH%"
+)
+where ffmpeg >nul 2>&1
+if %errorlevel% neq 0 (
+  echo  [X] FFmpeg install failed. Run: winget install Gyan.FFmpeg
+  pause & exit /b 1
+)
+echo  [OK] FFmpeg present
+
+:: ---------- Repo ----------
+where git >nul 2>&1
+if %errorlevel%==0 (
+  if exist "%INSTALLDIR%\.git" (
+    echo  [*] Updating existing install...
+    git -C "%INSTALLDIR%" pull --ff-only >nul 2>&1
+  ) else (
+    echo  [*] Cloning ReelForge...
+    git clone --depth 1 "%REPO%" "%INSTALLDIR%"
+  )
+) else (
+  echo  [*] Downloading ReelForge zip (no git found)...
+  curl -L -o "%TEMP%\reelforge.zip" "https://github.com/abicevoice1-sudo/reelforge/archive/refs/heads/main.zip"
+  powershell -NoProfile -Command "Expand-Archive -Path '%TEMP%\reelforge.zip' -DestinationPath '%TEMP%' -Force"
+  if exist "%INSTALLDIR%" rmdir /s /q "%INSTALLDIR%"
+  move "%TEMP%\reelforge-main" "%INSTALLDIR%" >nul
+)
+echo  [OK] ReelForge code ready
+
+:: ---------- venv + install ----------
+cd /d "%INSTALLDIR%"
+if not exist ".venv\Scripts\python.exe" (
+  echo  [*] Creating virtual environment...
+  python -m venv .venv
+)
+echo  [*] Installing ReelForge (a few minutes)...
+.venv\Scripts\python.exe -m pip install -q --upgrade pip >nul 2>&1
+set "EXTRAS=ai,voice,web,mcp,trends,bluesky,threads,youtube,x,schedule,captions"
+if %SKIP_VISION%==0 set "EXTRAS=%EXTRAS%,vision"
+.venv\Scripts\pip.exe install -q -e ".[%EXTRAS%]" >nul 2>&1
+if %errorlevel% neq 0 (
+  echo  [!!] Retrying without vision extra...
+  .venv\Scripts\pip.exe install -q -e ".[ai,voice,web,mcp,trends,bluesky,threads,youtube,x,schedule,captions]"
+  if %errorlevel% neq 0 (
+    echo  [X] pip install failed. Re-run, or paste the error on the ReelForge repo.
+    pause & exit /b 1
+  )
+)
+echo  [OK] ReelForge installed
+
+:: ---------- Voices + font ----------
+echo  [*] Downloading neural voices (one time)...
+.venv\Scripts\python.exe -c "import urllib.request,pathlib; v=pathlib.Path(r'%INSTALLDIR%')/'voices'; v.mkdir(exist_ok=True); b='https://huggingface.co/rhasspy/piper-voices/resolve/main/'; fs=[('en_US-amy-medium.onnx','en/en_US/amy/medium/en_US-amy-medium.onnx'),('en_US-amy-medium.onnx.json','en/en_US/amy/medium/en_US-amy-medium.onnx.json'),('ur_PK-aegis_female-medium.onnx','ur/ur_PK/aegis_female/medium/ur_PK-aegis_female-medium.onnx'),('ur_PK-aegis_female-medium.onnx.json','ur/ur_PK/aegis_female/medium/ur_PK-aegis_female-medium.onnx.json'),('ur_PK-fasih-medium.onnx','ur/ur_PK/fasih/medium/ur_PK-fasih-medium.onnx'),('ur_PK-fasih-medium.onnx.json','ur/ur_PK/fasih/medium/ur_PK-fasih-medium.onnx.json'),('hi_IN-priyamvada-medium.onnx','hi/hi_IN/priyamvada/medium/hi_IN-priyamvada-medium.onnx'),('hi_IN-priyamvada-medium.onnx.json','hi/hi_IN/priyamvada/medium/hi_IN-priyamvada-medium.onnx.json'),('hi_IN-rohan-medium.onnx','hi/hi_IN/rohan/medium/hi_IN-rohan-medium.onnx'),('hi_IN-rohan-medium.onnx.json','hi/hi_IN/rohan/medium/hi_IN-rohan-medium.onnx.json'),('zh_CN-huayan-medium.onnx','zh/zh_CN/huayan/medium/zh_CN-huayan-medium.onnx'),('zh_CN-huayan-medium.onnx.json','zh/zh_CN/huayan/medium/zh_CN-huayan-medium.onnx.json')]; [urllib.request.urlretrieve(b+r, v/n) for n,r in fs if not (v/n).exists() or (v/n).stat().st_size<1000]; print('voices ok')"
+echo  [OK] Voices ready
+
+:: ---------- Shortcuts ----------
+echo  [*] Creating shortcuts...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws=New-Object -ComObject WScript.Shell; foreach($d in @(\"$env:USERPROFILE\Desktop\", \"$env:APPDATA\Microsoft\Windows\Start Menu\Programs\")) { $l=$ws.CreateShortcut(\"$d\ReelForge Studio.lnk\"); $l.TargetPath='powershell.exe'; $l.Arguments='-NoProfile -ExecutionPolicy Bypass -File \"%INSTALLDIR%\scripts\launch-studio.ps1\"'; $l.WorkingDirectory='%INSTALLDIR%'; $l.Description='ReelForge Studio'; $l.Save() }"
+echo  [OK] Shortcuts created (Desktop + Start Menu)
+
+echo.
+echo  ============================================
+echo   Done! Launch "ReelForge Studio" from
+echo   your Desktop or Start Menu.
+echo  ============================================
+echo.
+set /p LAUNCH="  Start the Studio now? [Y/n] "
+if /i not "%LAUNCH%"=="n" (
+  powershell -NoProfile -ExecutionPolicy Bypass -File "%INSTALLDIR%\scripts\launch-studio.ps1"
+)

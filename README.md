@@ -39,9 +39,11 @@ The same video, re-voiced by `reelforge dub` — [Español](demo/coffee-v1-es.mp
 
 `reelforge serve` — generate, browse trends, publish, and track stats from the browser:
 
-| Studio | Library |
+| Studio (templates) | Settings (API keys) |
 |---|---|
-| ![Studio tab](demo/screenshots/studio.png) | ![Library tab](demo/screenshots/library.png) |
+| ![Studio tab](demo/screenshots/studio-templates.png) | ![Settings tab](demo/screenshots/studio-settings.png) |
+| Publish | Library |
+| ![Publish tab](demo/screenshots/studio-publish.png) | ![Library tab](demo/screenshots/library.png) |
 | Trends | Stats |
 | ![Trends tab](demo/screenshots/trends.png) | ![Stats tab](demo/screenshots/stats.png) |
 
@@ -115,6 +117,11 @@ FFmpeg, Git if missing, sets everything up, and puts **ReelForge Studio**
 on your Desktop + Start Menu:
 ```powershell
 & ([scriptblock]::Create((irm "https://raw.githubusercontent.com/abicevoice1-sudo/reelforge/main/install.ps1")))
+```
+
+**Windows (CMD)** — same thing, one line in Command Prompt:
+```cmd
+curl -L -o "%TEMP%\rf-install.cmd" "https://raw.githubusercontent.com/abicevoice1-sudo/reelforge/main/install.cmd" && "%TEMP%\rf-install.cmd"
 ```
 
 **Linux / macOS:**
