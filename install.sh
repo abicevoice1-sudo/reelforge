@@ -34,12 +34,17 @@ else
 fi
 
 say "Checking prerequisites"
-command -v python3 >/dev/null || fail "python3 not found — install Python 3.10–3.13 first (https://www.python.org/downloads/)."
-PYV=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-python3 -c 'import sys; assert sys.version_info >= (3,10)' \
+# python3 on unix, python on Windows Git Bash
+PYBIN=python3
+if ! command -v python3 >/dev/null 2>&1; then
+  command -v python >/dev/null 2>&1 && PYBIN=python
+fi
+command -v "$PYBIN" >/dev/null || fail "Python not found — install Python 3.11–3.13 from https://www.python.org/downloads/ (tick 'Add to PATH')."
+PYV=$($PYBIN -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+$PYBIN -c 'import sys; assert sys.version_info >= (3,10)' \
   || fail "Python 3.10+ required (found $PYV)."
-PY_MAJOR=$(python3 -c 'import sys; print(sys.version_info.major)')
-PY_MINOR=$(python3 -c 'import sys; print(sys.version_info.minor)')
+PY_MAJOR=$($PYBIN -c 'import sys; print(sys.version_info.major)')
+PY_MINOR=$($PYBIN -c 'import sys; print(sys.version_info.minor)')
 # torch (vision extra) has no wheels for Python 3.14+ yet — skip it there.
 SKIP_VISION=0
 if [ "$PY_MAJOR" -gt 3 ] || { [ "$PY_MAJOR" -eq 3 ] && [ "$PY_MINOR" -ge 14 ]; }; then
@@ -52,7 +57,7 @@ ok "python3 $PYV + ffmpeg present"
 
 say "Creating virtual environment"
 if [ ! -d .venv ]; then
-  python3 -m venv .venv || fail "could not create venv — on Debian/Ubuntu: sudo apt install python3-venv"
+  $PYBIN -m venv .venv || fail "could not create venv — on Debian/Ubuntu: sudo apt install python3-venv"
 fi
 [ -x "$VBIN/python" ] || [ -x "$VBIN/python.exe" ] || fail "venv python not found at $VBIN"
 ok "venv ready"
