@@ -7,7 +7,7 @@
 
 **Title:** I compared 20 open-source AI video pipelines. Only one checks its own work.
 
-**Cover:** the burger-in-biryani frame vs the fixed frame, side by side.
+**Cover:** `assets/social-preview.png` in the repo (Dev.to cover image is optional — any biryani-video frame works).
 
 ---
 
@@ -61,7 +61,26 @@ renders pick up mid-pipeline instead of starting over).
 
 ## The honest scorecard
 
-[comparison table from README]
+| | ReelForge | MoneyPrinterTurbo | OpenPost | Postiz | ShortGPT |
+|---|---|---|---|---|---|
+| Prompt → finished short | ✅ | ✅ | ❌ (manual editor) | ❌ | ✅ |
+| Footage verification | ✅ CLIP + Gemini | ❌ | n/a | n/a | ❌ |
+| Offline neural voice fallback | ✅ Piper | ❌ | n/a | n/a | ❌ |
+| Audio safety gate | ✅ | ❌ | n/a | n/a | ❌ |
+| Trend harvesting (free, no keys) | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Batch production | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Karaoke word-level captions | ✅ | ✅ | ✅ | ❌ | ✅ |
+| Official publishing APIs | ✅ 8 platforms | ⚠️ Selenium for YT | ✅ | ✅ | ⚠️ |
+| Multi-language dubbing | ✅ 7 languages | ❌ | ❌ | ❌ | ✅ |
+| Real analytics pull | ✅ | ❌ | ❌ | ✅ | ❌ |
+| Web UI | ✅ Studio | ✅ | ✅ | ✅ | ✅ |
+| MCP server | ✅ | ❌ | ✅ | ✅ | ❌ |
+| Comment-reply drafts (human-approved) | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Resume failed projects | ✅ | ❌ | n/a | n/a | ❌ |
+| License | MIT | MIT | AGPL/Commercial | MIT | MIT |
+| $0 to run | ✅ | ✅ | self-host | ✅ | ✅ |
+
+*MoneyPrinterTurbo (129K★) is the most mature; OpenPost is the best manual workspace. ReelForge is the most engineered AI-native pipeline — the only one that checks its own work.*
 
 ReelForge is MIT, 37 tests, and the demo video in the README was made
 end-to-end by the tool itself — burger-free.
