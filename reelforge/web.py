@@ -78,6 +78,88 @@ def job_status(job_id: str):
     return _jobs[job_id]
 
 
+_SETTING_KEYS = [
+    ("PIXABAY_API_KEY", "Pixabay", "Real stock footage (free key at pixabay.com/api)"),
+    ("GEMINI_API_KEY", "Gemini", "AI scripts + footage checks (free at aistudio.google.com)"),
+    ("NVIDIA_API_KEY", "NVIDIA NIM", "Backup AI scripts (free at build.nvidia.com)"),
+    ("AGNES_API_KEY", "Agnes AI", "AI-generated video clips (free at platform.agnes-ai.com)"),
+]
+
+
+def _env_path() -> Path:
+    return Path.cwd() / ".env"
+
+
+def _read_env_file() -> dict:
+    vals = {}
+    p = _env_path()
+    if p.exists():
+        for line in p.read_text().splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                vals[k.strip()] = v.strip().strip("'\"")
+    return vals
+
+
+@app.get("/api/settings")
+def get_settings():
+    import os as _os
+    file_vals = _read_env_file()
+    return {"keys": [
+        {"key": k, "label": label, "hint": hint,
+         "set": bool(_os.environ.get(k) or file_vals.get(k))}
+        for k, label, hint in _SETTING_KEYS
+    ]}
+
+
+class SettingsRequest(BaseModel):
+    keys: dict = {}
+
+
+@app.post("/api/settings")
+def save_settings(req: SettingsRequest):
+    allowed = {k for k, _, _ in _SETTING_KEYS}
+    vals = _read_env_file()
+    for k, v in (req.keys or {}).items():
+        if k not in allowed:
+            continue
+        v = (v or "").strip()
+        if v:
+            vals[k] = v
+        elif k in vals:
+            del vals[k]
+    lines = [f"{k}={v}" for k, v in vals.items()]
+    _env_path().write_text("\n".join(lines) + "\n")
+    # make them live for this process too
+    import os as _os
+    for k, v in vals.items():
+        _os.environ[k] = v
+    return {"ok": True, "saved": sorted(vals)}
+
+
+@app.get("/api/voice-sample")
+def voice_sample(lang: str = "en"):
+    """Generate a short voice sample so users can hear the quality."""
+    import tempfile
+    from reelforge import voice as voice_mod
+    samples = {
+        "en": "Hello! This is how your videos will sound.",
+        "ur": "السلام علیکم! آپ کی ویڈیوز ایسی آواز میں ہوں گی۔",
+        "hi": "नमस्ते! आपके वीडियो ऐसे सुनाई देंगे।",
+        "zh": "你好！你的视频听起来就是这样的。",
+        "ar": "مرحباً! هكذا ستبدو مقاطع الفيديو الخاصة بك.",
+        "es": "¡Hola! Así sonarán tus videos.",
+    }
+    text = samples.get(lang, samples["en"])
+    out = Path(tempfile.gettempdir()) / f"reelforge-voice-{lang}.mp3"
+    v = (voice_mod.SAMPLE_VOICES.get(lang) or voice_mod.SAMPLE_VOICES["en"])[0]
+    cfg = Config(overrides={"voice": v})
+    voice_mod.synthesize_scene(text, out, cfg)
+    from fastapi.responses import FileResponse
+    return FileResponse(out, media_type="audio/mpeg", filename=f"voice-{lang}.mp3")
+
+
 @app.get("/api/status")
 def api_status():
     """Which external services are configured. Never leaks key values."""
@@ -235,13 +317,14 @@ h3 .sub{font-weight:400;font-size:13px;color:var(--dim);margin-left:8px}
 <button onclick="tab('library')">📚 Library</button>
 <button onclick="tab('publish')">🚀 Publish</button>
 <button onclick="tab('stats')">📊 Stats</button>
+<button onclick="tab('settings')">⚙️ Settings</button>
 </nav><main>
 <div id="t-studio" class="tab on">
  <div class="panel hero" id="welcome">
   <h2>Turn any idea into a viral short. <span>Free, forever.</span></h2>
   <p>Pick a template below, or describe your own topic. ReelForge writes the script,
   narrates it, finds the footage, adds karaoke captions, and renders a 1080×1920
-  video — then publishes it to 8 platforms in one click. <b>9 languages</b> supported.</p>
+  video — then publishes it to 8 platforms in one click. <b>10 languages</b> supported.</p>
   <button class="ghost" onclick="document.getElementById('welcome').style.display='none'">Got it — hide this</button>
  </div>
  <div class="panel"><h3>🎨 Start from a template</h3>
@@ -264,13 +347,14 @@ h3 .sub{font-weight:400;font-size:13px;color:var(--dim);margin-left:8px}
      <option value="fr">French</option>
      <option value="de">German</option>
      <option value="pt">Portuguese</option>
+     <option value="zh">Chinese</option>
     </select></div>
    <div style="max-width:150px"><label>&nbsp;</label><br>
     <button class="go" id="genbtn" onclick="generate()">Forge ⚒️</button></div>
   </div>
   <p class="log" id="genlog"></p>
-  <p class="log" style="margin-top:8px">🌍 <b>9 languages, one click.</b> Pick Urdu, Hindi, Arabic, Spanish… and ReelForge
-  dubs the entire video — native voice, translated captions, RTL-correct. No other free tool does this.</p>
+  <p class="log" style="margin-top:8px">🌍 <b>10 languages, one click.</b> Pick Urdu, Hindi, Chinese, Arabic, Spanish… and ReelForge
+  dubs the entire video — native human-like voice, translated captions, RTL-correct. No other free tool does this.</p>
   <div class="apistat" id="apistat"></div>
  </div>
 </div>
@@ -309,6 +393,29 @@ h3 .sub{font-weight:400;font-size:13px;color:var(--dim);margin-left:8px}
 </div>
 <div id="t-stats" class="tab"><div class="panel"><h3>Studio stats</h3>
  <div id="statlist"></div></div></div>
+<div id="t-settings" class="tab">
+ <div class="panel"><h3>⚙️ Settings <span class="sub">API keys unlock real footage, AI scripts & AI visuals</span></h3>
+  <p class="log">Keys are stored in a <b>.env</b> file next to the app — never shown back, never uploaded anywhere.</p>
+  <div id="keyform"></div>
+  <div style="margin-top:14px"><button class="go" onclick="saveSettings()">Save keys</button>
+  <span class="log" id="savemsg" style="margin-left:12px"></span></div>
+ </div>
+ <div class="panel"><h3>🎙️ Voice</h3>
+  <p class="log">ReelForge uses the most human-like free voice available, automatically:</p>
+  <p class="log" style="margin-top:8px"><b>1. Edge-TTS</b> (Microsoft neural — studio quality, needs internet, no key)<br>
+  <b>2. Piper</b> (offline neural — ships with the app, 4 languages)<br>
+  <b>3. gTTS</b> (last resort)</p>
+  <p class="log" style="margin-top:8px">Every dub uses a <b>native speaker voice</b> for its language — Urdu dubs get a Urdu voice, Chinese dubs get a Chinese voice. Test yours:</p>
+  <div class="row"><div><select id="vtestlang">
+   <option value="en">English</option><option value="ur">Urdu</option>
+   <option value="hi">Hindi</option><option value="zh">Chinese</option>
+   <option value="ar">Arabic</option><option value="es">Spanish</option>
+  </select></div>
+  <div style="max-width:200px"><label>&nbsp;</label><br><button class="go" onclick="testVoice()">🔊 Play sample</button></div></div>
+  <p class="log" id="voicemsg" style="margin-top:8px"></p>
+  <audio id="vaudio" controls style="display:none;margin-top:8px;width:100%"></audio>
+ </div>
+</div>
 </main>
 <script>
 function tab(n){document.querySelectorAll('.tab').forEach(e=>e.classList.remove('on'));
@@ -316,7 +423,8 @@ document.getElementById('t-'+n).classList.add('on');
 document.querySelectorAll('nav button').forEach(e=>e.classList.remove('on'));
 event.target.classList.add('on');
 if(n==='library')loadProjects();if(n==='stats')loadStats();
-if(n==='trends')loadTrends();if(n==='publish')loadPublish();}
+if(n==='trends')loadTrends();if(n==='publish')loadPublish();
+if(n==='settings')loadSettings();}
 const TEMPLATES=[
  {emo:"🔥",name:"Motivation",topic:"5 brutal truths about success nobody tells you",dur:30,desc:"Punchy mindset content. High retention, high shares."},
  {emo:"🍜",name:"Food",topic:"hyderabadi biryani recipe secrets",dur:35,desc:"Recipe reveals and food stories that make mouths water."},
@@ -459,6 +567,33 @@ async function loadApiStatus(){
  }catch(e){}
 }
 loadApiStatus();
+async function loadSettings(){
+ const r=await fetch('/api/settings');const j=await r.json();
+ document.getElementById('keyform').innerHTML=j.keys.map(k=>
+  `<div style="margin-bottom:12px"><label>${k.label} ${k.set?'<span class="badge ok">set</span>':'<span class="badge">not set</span>'}</label>
+   <input type="password" id="key_${k.key}" placeholder="${k.set?'•••••• (enter new to replace)':'Paste key here'}" autocomplete="off">
+   <p class="log" style="margin:4px 0 0">${k.hint}</p></div>`).join('');
+}
+async function saveSettings(){
+ const keys={};
+ document.querySelectorAll('#keyform input').forEach(i=>{
+  if(i.value.trim()) keys[i.id.replace('key_','')]=i.value.trim();});
+ const r=await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({keys})});
+ const j=await r.json();
+ document.getElementById('savemsg').textContent=j.ok?('✅ Saved ('+j.saved.length+' keys). Restart the server to apply everywhere.'):'❌ Save failed';
+ loadSettings();loadApiStatus();
+}
+async function testVoice(){
+ const lang=document.getElementById('vtestlang').value;
+ const msg=document.getElementById('voicemsg');const au=document.getElementById('vaudio');
+ msg.textContent='Generating sample…';au.style.display='none';
+ try{
+  const r=await fetch('/api/voice-sample?lang='+lang);
+  if(!r.ok) throw new Error('failed');
+  const blob=await r.blob();au.src=URL.createObjectURL(blob);
+  au.style.display='block';au.play();msg.textContent='🔊 Playing '+lang+' sample — this is the actual voice quality.';
+ }catch(e){msg.textContent='❌ Could not generate sample. Check your connection.';}
+}
 </script></body></html>
 """
 
