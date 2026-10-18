@@ -306,7 +306,7 @@ def analytics():
 
 
 @app.command()
-def dub(slug: str, lang: str = typer.Option(..., help="ur|hi|ar|es|fr|de|pt")):
+def dub(slug: str, lang: str = typer.Option(..., help="ur|ur-roman|hi|hi-roman|ar|es|fr|de|pt")):
     """Re-voice a project in another language (same clips, new narration)."""
     from . import dub as dub_mod
     from .voice import DUB_LANGUAGES

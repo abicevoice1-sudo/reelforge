@@ -59,16 +59,28 @@ def render(plan: EditPlan, clips: list[Path], voiceovers: list[Path],
     fc: list[str] = []
 
     # --- per-scene video prep: trim (+xfade overlap), reframe 9:16 ---
+    # Cinematic treatment (config `cinematic`, default on): a slow Ken Burns
+    # push-in on every clip plus a subtle film grade. This is the cheapest
+    # way to make stock footage feel directed instead of slideshow-flat.
+    cinematic = cfg.get("cinematic", True)
     for i, scene in enumerate(plan.scenes):
         vi = 2 * i
         d = durs[i] + (xfades[i][1] if i < n - 1 else 0.0)
         zoom = scene.transition == "zoom"
         sw, sh = (1242, 2208) if zoom else (W, H)
-        fc.append(
-            f"[{vi}:v]trim=0:{d:.2f},setpts=PTS-STARTPTS,"
-            f"scale={sw}:{sh}:force_original_aspect_ratio=increase,"
-            f"crop={W}:{H},fps={FPS}[v{i}]"
-        )
+        prep = (f"[{vi}:v]trim=0:{d:.2f},setpts=PTS-STARTPTS,"
+                f"scale={sw}:{sh}:force_original_aspect_ratio=increase,")
+        if cinematic and not zoom:
+            # Gentle 6% push-in across the clip, anchored center.
+            frames = max(1, int(d * FPS))
+            prep += (f"zoompan=z='1+0.06*on/{frames}':x='iw/2-(iw/zoom/2)':"
+                     f"y='ih/2-(ih/zoom/2)':d=1:s={W}x{H}:fps={FPS},")
+        else:
+            prep += f"crop={W}:{H},"
+        if cinematic:
+            prep += "eq=contrast=1.06:saturation=1.12:brightness=0.01,"
+        prep += f"fps={FPS}[v{i}]"
+        fc.append(prep)
         fc.append(f"[{2 * i + 1}:a]atrim=0:{durs[i]:.2f},asetpts=PTS-STARTPTS[a{i}]")
 
     # --- xfade chain (video) ---

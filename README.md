@@ -33,7 +33,7 @@ reelforge agent "make a 30s reel about coffee and post it Friday at 6pm"
 
 <video src="demo/coffee-v1.mp4" width="270" controls poster="demo/coffee-poster.jpg"></video>
 
-The same video, re-voiced by `reelforge dub` — [Español](demo/coffee-v1-es.mp4) · [اردو](demo/coffee-v1-ur.mp4). One project, every audience.
+The same video, re-voiced by `reelforge dub` — [Español](demo/coffee-v1-es.mp4) · [اردو](demo/coffee-v1-ur.mp4) · [Roman Urdu](demo/coffee-v1-ur-roman.mp4). One project, every audience.
 
 ### 🖥️ ReelForge Studio
 
@@ -73,7 +73,7 @@ prompt ──▶ script ──▶ voice ──▶ visuals ──▶ captions ─
 - **Captions** — faster-whisper word timestamps → burned-in **karaoke captions**.
 - **Render** — FFmpeg: 9:16 smart reframe, transitions, hook + CTA overlays, ducked music, H.264/AAC faststart.
 - **Publish** — YouTube, TikTok, Instagram, Threads, Bluesky, LinkedIn, Pinterest, X. Official APIs only — no Selenium, no scraping, nothing that gets accounts banned.
-- **Dub** — `reelforge dub <slug> --lang ur` re-voices any video in Urdu, Hindi, Arabic, Spanish, French, German or Portuguese. Same verified clips, new native narration.
+- **Dub** — `reelforge dub <slug> --lang ur` re-voices any video in Urdu, Hindi, Arabic, Spanish, French, German or Portuguese — plus `ur-roman` / `hi-roman` for Roman-script captions ("Tum kaise ho?") with the native neural voice. Urdu captions render in proper Nastaliq calligraphy, right-to-left, with the karaoke highlight tracking the spoken word. Same verified clips, new native narration.
 - **Analytics** — `reelforge analytics` pulls real views/likes/comments from YouTube's API. Numbers from the platform, not vanity metrics.
 - **Trends** — `reelforge trends <niche>` harvests Google News + Hacker News (free, no keys). `reelforge batch` turns the top trends into videos unattended.
 - **Schedule** — natural language ("Friday 6pm"), durable SQLite queue, retrying worker.
@@ -93,7 +93,7 @@ prompt ──▶ script ──▶ voice ──▶ visuals ──▶ captions ─
 | Batch production | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Karaoke word-level captions | ✅ | ✅ | ✅ | ❌ | ✅ |
 | Official publishing APIs | ✅ 8 platforms | ⚠️ Selenium for YT | ✅ | ✅ | ⚠️ |
-| Multi-language dubbing | ✅ 7 languages | ❌ | ❌ | ❌ | ✅ |
+| Multi-language dubbing | ✅ 9 options (incl. Roman Urdu/Hindi) | ❌ | ❌ | ❌ | ✅ |
 | Real analytics pull | ✅ | ❌ | ❌ | ✅ | ❌ |
 | Web UI | ✅ Studio | ✅ | ✅ | ✅ | ✅ |
 | MCP server | ✅ | ❌ | ✅ | ✅ | ❌ |
