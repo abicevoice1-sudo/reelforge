@@ -35,6 +35,10 @@ shortsmash agent "make a 30s reel about coffee and post it Friday at 6pm"
 
 The same video, re-voiced by `shortsmash dub` — [Español](demo/coffee-v1-es.mp4) · [اردو](demo/coffee-v1-ur.mp4) · [Roman Urdu](demo/coffee-v1-ur-roman.mp4). One project, every audience.
 
+**中文版** — the same video, fully re-voiced in native Mandarin (Piper huayan neural voice, not translationese), with Hanzi karaoke captions:
+
+<video src="demo/coffee-v1-zh.mp4" width="270" controls></video>
+
 ### 🖥️ ShortSmash Studio
 
 `shortsmash serve` — generate, browse trends, publish, and track stats from the browser:
@@ -46,6 +50,8 @@ The same video, re-voiced by `shortsmash dub` — [Español](demo/coffee-v1-es.m
 | ![Publish tab](demo/screenshots/studio-publish.png) | ![Library tab](demo/screenshots/library.png) |
 | Trends | Stats |
 | ![Trends tab](demo/screenshots/trends.png) | ![Stats tab](demo/screenshots/stats.png) |
+| Lyrics mode | Auto pilot |
+| ![Lyrics tab](demo/screenshots/lyrics.png) | ![Auto tab](demo/screenshots/auto.png) |
 
 *Earlier demo: [Hyderabadi biryani](demo/biryani-v3.mp4) — the one that taught the pipeline to see.*
 
