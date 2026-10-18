@@ -62,6 +62,26 @@ def _escape(text: str) -> str:
     return text.replace("{", "(").replace("}", ")")
 
 
+# U+200F RIGHT-TO-LEFT MARK. Prepended to a dialogue line it forces the
+# paragraph base direction to RTL, so libass/FriBidi lays Urdu/Arabic
+# captions out right-to-left (first spoken word at the right, reading
+# order matching the narration) instead of left-to-right like English.
+RLM = "\u200f"
+
+
+def _is_rtl(text: str) -> bool:
+    """True when the text contains strong right-to-left characters
+    (Arabic script incl. Urdu, Hebrew)."""
+    return any(
+        "\u0590" <= ch <= "\u08ff" or "\ufb50" <= ch <= "\ufeff"
+        for ch in text
+    )
+
+
+def _rtl(text: str) -> str:
+    return (RLM + text) if _is_rtl(text) else text
+
+
 def build_ass(words: list[Word], out: Path, style: str = "karaoke",
               fontsize: int = 64, width: int = 1080, height: int = 1920,
               overlays: list[dict] | None = None) -> Path:
@@ -133,6 +153,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             ).strip()
         else:
             body = " ".join(_escape(w.text) for w in line)
+        # RLM goes first so it sets the paragraph direction before any
+        # karaoke override blocks; timings stay glued to their words.
+        body = _rtl(body)
         events.append(
             f"Dialogue: 0,{start},{end},{style_name},,0,0,0,,{body}"
         )
@@ -142,7 +165,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         wrapped = _wrap(ov["text"], 24)
         events.append(
             f"Dialogue: 0,{_fmt_time(ov['start'])},{_fmt_time(ov['end'])},"
-            f"{kind},,0,0,0,,{_escape(wrapped)}"
+            f"{kind},,0,0,0,,{_rtl(_escape(wrapped))}"
         )
 
     out.write_text(header + "\n".join(events) + "\n", encoding="utf-8")

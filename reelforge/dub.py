@@ -70,8 +70,14 @@ def dub_project(slug: str, lang: str, cfg: Config | None = None) -> Path:
         dubbed = list(ex.map(_dub_scene, plan.scenes))
     new_scenes = [s for s, _ in dubbed]
     audio_paths = [p for _, p in dubbed]
-    dub_plan = plan.model_copy(update={"scenes": new_scenes,
-                                       "title": f"{plan.title} ({voice.DUB_LANGUAGES[lang]})"})
+    # A dub is only done when every word on screen is translated —
+    # hook and CTA overlays included, not just the narration.
+    dub_plan = plan.model_copy(update={
+        "scenes": new_scenes,
+        "title": f"{plan.title} ({voice.DUB_LANGUAGES[lang]})",
+        "hook": translate(plan.hook, lang, cfg),
+        "cta": translate(plan.cta, lang, cfg) if plan.cta else plan.cta,
+    })
     (workdir / "plan.json").write_text(dub_plan.model_dump_json(indent=2))
     final = _finish_project(dub_plan, workdir, audio_paths, dub_cfg)
     print(f"Dubbed video ready: {final}")
