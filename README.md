@@ -28,8 +28,6 @@ shortsmash post myvideo.mp4 --at "Friday 6pm" --platforms youtube,tiktok
 - **📈 Trends tab** — browse what's hot per niche, click any trend to use it as your topic
 - **📚 Library tab** — every project, video preview, one-click publish
 - **📤 Manual posts** — upload your own video, get a pre-flight check (resolution, duration, per-platform limits), AI-written title + hashtags, then post now or schedule it ("Friday 6pm") to 10 platforms
-
-![Post your own video — upload, validate, AI caption, post or schedule](demo/screenshots/publish-manual-post.png)
 - **📊 Stats tab** — your output at a glance
 
 ## 🎬 Demo
@@ -43,6 +41,12 @@ shortsmash post myvideo.mp4 --at "Friday 6pm" --platforms youtube,tiktok
 | [![▶ Play](demo/coffee-poster.jpg)](demo/coffee-v1.mp4) | [![▶ Play](demo/coffee-poster-es.jpg)](demo/coffee-v1-es.mp4) | [![▶ Play](demo/coffee-poster-ur.jpg)](demo/coffee-v1-ur.mp4) | [![▶ Play](demo/coffee-poster-ur-roman.jpg)](demo/coffee-v1-ur-roman.mp4) | [![▶ Play](demo/coffee-poster-zh.jpg)](demo/coffee-v1-zh.mp4) |
 
 The same video, re-voiced by `shortsmash dub` — native neural voices, same verified footage. The 中文版 is fully re-voiced in native Mandarin (Piper huayan voice, not translationese) with Hanzi karaoke captions. One project, every audience.
+
+### 📤 Or skip the AI — post your own video
+
+Upload any video, get a pre-flight check (resolution, duration, per-platform limits), an AI-written title + hashtags, then post now or schedule it ("Friday 6pm") to 10 platforms. In the Studio's Publish tab, or one command: `shortsmash post myvideo.mp4 --caption`
+
+[![Post your own video — upload, validate, AI caption, post or schedule](demo/screenshots/publish-manual-post.png)](demo/screenshots/publish-manual-post.png)
 
 ### 🖥️ ShortSmash Studio
 
