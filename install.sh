@@ -76,6 +76,10 @@ ok "venv ready"
 
 say "Installing ShortSmash + all features (this is the long step — one time only)"
 "$VBIN/python" -m pip -q install --upgrade pip
+# pip builds huge wheels (torch ~800MB); /tmp is a tiny tmpfs on some
+# systems, so point temp files at the install dir instead.
+export TMPDIR="$TARGET/.pip-tmp"
+mkdir -p "$TMPDIR"
 EXTRAS="ai,voice,web,mcp,trends,bluesky,threads,youtube,x,schedule,captions"
 if [ "$SKIP_VISION" -eq 0 ]; then
   EXTRAS="$EXTRAS,vision"
@@ -87,6 +91,8 @@ if ! "$VBIN/python" -m pip install -e ".[$EXTRAS]"; then
   SKIP_VISION=1
 fi
 ok "dependencies installed"
+rm -rf "$TARGET/.pip-tmp"
+unset TMPDIR
 
 if [ "$SKIP_VISION" -eq 0 ]; then
   say "Downloading CLIP vision model (offline footage gate, ~600MB, one time)"
@@ -148,8 +154,10 @@ printf '🚀 Publish tab to post it to 10 platforms in one click.\n'
 printf '\033[1;32m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m\n'
 
 # Offer to start the server now. Read from /dev/tty so this works under
-# `curl ... | bash`, where stdin is the script itself.
-if [ -c /dev/tty ]; then
+# `curl ... | bash`, where stdin is the script itself. The writability
+# probe skips the prompt entirely when there is no controlling terminal
+# (CI, detached runs) — safe under `set -e` because it is an if-condition.
+if printf '' > /dev/tty 2>/dev/null; then
   printf '\n  Start ShortSmash Studio now? [Y/n] ' > /dev/tty
   read -r _launch < /dev/tty || _launch=""
   case "$_launch" in
