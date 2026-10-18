@@ -70,16 +70,28 @@ def generate(prompt: str, out: Path, cfg: Config,
              duration: float = 4.0, aspect: str = "9:16") -> Path:
     """Generate one AI video clip for a scene prompt. Returns the mp4 path."""
     seconds = str(min(12, max(4, int(round(duration)))))
-    create = _call(f"{BASE}/v1/videos", {
-        "model": cfg.get("agnes_model", MODEL),
-        "mode": "text",
-        # Cinematic framing helps the model; keep the scene's own words first.
-        "prompt": f"Cinematic vertical video, no on-screen text, no watermark: {prompt}",
-        "size": cfg.get("agnes_size", "720P"),
-        "aspect_ratio": aspect,
-        "seconds": seconds,
-        "n": 1,
-    })
+    # Free-tier queues fill up at peak hours; back off and retry on submit.
+    create: dict = {}
+    for attempt in range(8):
+        try:
+            create = _call(f"{BASE}/v1/videos", {
+                "model": cfg.get("agnes_model", MODEL),
+                "mode": "text",
+                # Cinematic framing helps the model; keep the scene's words first.
+                "prompt": f"Cinematic vertical video, no on-screen text, no watermark: {prompt}",
+                "size": cfg.get("agnes_size", "720P"),
+                "aspect_ratio": aspect,
+                "seconds": seconds,
+                "n": 1,
+            })
+            break
+        except AgnesError as e:
+            if "video_queue_full" not in str(e) or attempt == 7:
+                raise
+            wait = 60 * (attempt + 1)
+            print(f"agnes: queue full, retrying in {wait}s (attempt {attempt + 2}/8)…",
+                  flush=True)
+            time.sleep(wait)
     video_id = create.get("video_id") or create.get("id") or create.get("task_id")
     if not video_id:
         raise AgnesError(f"No video_id in Agnes response: {str(create)[:200]}")
