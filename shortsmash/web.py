@@ -556,7 +556,7 @@ h3 .sub{font-weight:500;font-size:13px;color:var(--dim);margin-left:10px}
 @media(max-width:640px){header,nav,main{padding-left:16px;padding-right:16px}
 .hero h2{font-size:21px}.tgrid{grid-template-columns:1fr 1fr}}
 </style></head><body>
-<header><h1>⚒️ Reel<span>Forge</span> Studio</h1><span class="tag">v0.2.0</span></header>
+<header><h1>⚒️ Short<span>Smash</span> Studio</h1><span class="tag">v0.2.0</span></header>
 <nav>
 <button class="on" onclick="tab('studio')">🎬 Studio</button>
 <button onclick="tab('trends')">📈 Trends</button>
@@ -592,7 +592,7 @@ h3 .sub{font-weight:500;font-size:13px;color:var(--dim);margin-left:10px}
      <option value="9:16">9:16 Vertical</option>
     </select></div>
    <div style="max-width:150px"><label>&nbsp;</label><br>
-    <button class="go" id="genbtn" onclick="generate()">Forge ⚒️</button></div>
+    <button class="go" id="genbtn" onclick="generate()">Smash ⚒️</button></div>
   </div>
   <p class="log" id="genlog"></p>
   <p class="log" style="margin-top:8px">🌍 <b>50 languages, one click.</b> Pick Urdu, Hindi, Chinese, Arabic, Spanish… and ShortSmash

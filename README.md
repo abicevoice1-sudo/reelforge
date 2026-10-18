@@ -20,7 +20,7 @@ shortsmash agent "make a 30s reel about coffee and post it Friday at 6pm"
 
 `shortsmash serve` launches a dark, fast studio in your browser — no build step:
 
-- **🎬 Studio tab** — type a topic, hit Forge, watch it build; video previews inline
+- **🎬 Studio tab** — type a topic, hit Smash, watch it build; video previews inline
 - **📈 Trends tab** — browse what's hot per niche, click any trend to use it as your topic
 - **📚 Library tab** — every project, video preview, one-click publish
 - **📊 Stats tab** — your output at a glance
