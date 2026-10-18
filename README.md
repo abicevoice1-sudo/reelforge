@@ -28,21 +28,21 @@ shortsmash post myvideo.mp4 --at "Friday 6pm" --platforms youtube,tiktok
 - **📈 Trends tab** — browse what's hot per niche, click any trend to use it as your topic
 - **📚 Library tab** — every project, video preview, one-click publish
 - **📤 Manual posts** — upload your own video, get a pre-flight check (resolution, duration, per-platform limits), AI-written title + hashtags, then post now or schedule it ("Friday 6pm") to 10 platforms
+
+![Post your own video — upload, validate, AI caption, post or schedule](demo/screenshots/publish-manual-post.png)
 - **📊 Stats tab** — your output at a glance
 
 ## 🎬 Demo
 
 *Made end-to-end by ShortSmash — no hand-picked clips, no human editing. LLM script, neural voice, CLIP-verified stock footage, karaoke captions, ducked music bed.*
 
-**"How Goats Made You Addicted to Coffee"** — 49s, 1080×1920, made from one prompt:
+**"How Goats Made You Addicted to Coffee"** — 49s, 1080×1920, made from one prompt. Click any poster to play:
 
-<video src="demo/coffee-v1.mp4" width="270" controls poster="demo/coffee-poster.jpg"></video>
+| English (original) | Español | اردو | Roman Urdu | 中文 |
+|---|---|---|---|---|
+| [![▶ Play](demo/coffee-poster.jpg)](demo/coffee-v1.mp4) | [![▶ Play](demo/coffee-poster-es.jpg)](demo/coffee-v1-es.mp4) | [![▶ Play](demo/coffee-poster-ur.jpg)](demo/coffee-v1-ur.mp4) | [![▶ Play](demo/coffee-poster-ur-roman.jpg)](demo/coffee-v1-ur-roman.mp4) | [![▶ Play](demo/coffee-poster-zh.jpg)](demo/coffee-v1-zh.mp4) |
 
-The same video, re-voiced by `shortsmash dub` — [Español](demo/coffee-v1-es.mp4) · [اردو](demo/coffee-v1-ur.mp4) · [Roman Urdu](demo/coffee-v1-ur-roman.mp4). One project, every audience.
-
-**中文版** — the same video, fully re-voiced in native Mandarin (Piper huayan neural voice, not translationese), with Hanzi karaoke captions:
-
-<video src="demo/coffee-v1-zh.mp4" width="270" controls></video>
+The same video, re-voiced by `shortsmash dub` — native neural voices, same verified footage. The 中文版 is fully re-voiced in native Mandarin (Piper huayan voice, not translationese) with Hanzi karaoke captions. One project, every audience.
 
 ### 🖥️ ShortSmash Studio
 
