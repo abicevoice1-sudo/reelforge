@@ -16,6 +16,8 @@ shortsmash trends food                    # what's hot right now (free, no keys)
 shortsmash batch food --count 5           # turn the top 5 trends into 5 videos
 shortsmash serve                          # 🆕 web studio: http://localhost:8000
 shortsmash agent "make a 30s reel about coffee and post it Friday at 6pm"
+shortsmash post myvideo.mp4 --caption     # post YOUR video: AI title + hashtags
+shortsmash post myvideo.mp4 --at "Friday 6pm" --platforms youtube,tiktok
 ```
 
 ## 🖥️ ShortSmash Studio (web UI)
@@ -25,6 +27,7 @@ shortsmash agent "make a 30s reel about coffee and post it Friday at 6pm"
 - **🎬 Studio tab** — type a topic, hit Smash, watch it build; video previews inline
 - **📈 Trends tab** — browse what's hot per niche, click any trend to use it as your topic
 - **📚 Library tab** — every project, video preview, one-click publish
+- **📤 Manual posts** — upload your own video, get a pre-flight check (resolution, duration, per-platform limits), AI-written title + hashtags, then post now or schedule it ("Friday 6pm") to 10 platforms
 - **📊 Stats tab** — your output at a glance
 
 ## 🎬 Demo

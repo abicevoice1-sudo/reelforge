@@ -10,7 +10,8 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from . import __version__, agent, engage, pipeline, schedule
+from . import __version__, agent, engage, pipeline
+from . import schedule as sched_mod
 from .config import CONFIG_FILE, DEFAULTS, Config, ensure_home
 from .publish import ADAPTERS
 
@@ -108,6 +109,68 @@ def publish(slug: str,
 
 
 @app.command()
+def post(video: str,
+         title: Optional[str] = typer.Option(None, help="Video title"),
+         desc: Optional[str] = typer.Option(None, help="Description"),
+         tags: str = typer.Option("", help="Comma-separated hashtags"),
+         platforms: str = typer.Option("youtube,tiktok,instagram,x",
+                                        help="Comma-separated"),
+         at: Optional[str] = typer.Option(None,
+                                           help='Schedule for later, e.g. "Friday 6pm"'),
+         dry_run: bool = typer.Option(False, help="Don't actually upload"),
+         caption: bool = typer.Option(False,
+                                       help="AI-generate title/desc/hashtags from the video")):
+    """Post YOUR OWN video file — now, or scheduled. Not just AI-made ones."""
+    from pathlib import Path as _Path
+
+    cfg = _cfg()
+    src = _Path(video)
+    plats = [p.strip() for p in platforms.split(",") if p.strip()]
+    bad = [p for p in plats if p not in ADAPTERS]
+    if bad:
+        raise typer.BadParameter(f"Unknown platforms: {bad}. Choose from {ADAPTERS}.")
+
+    # Pre-flight: probe + warn before anything else.
+    try:
+        info = pipeline.validate_video(src, plats)
+    except (FileNotFoundError, ValueError) as e:
+        raise typer.BadParameter(str(e))
+    console.print(f"[dim]📹 {info['width']}x{info['height']} {info['fps']}fps, "
+                  f"{info['duration_str']}, {info['size_mb']}MB[/dim]")
+    for w in info["warnings"]:
+        console.print(f"[yellow]⚠ {w}[/yellow]")
+
+    hashtags = [t.strip() for t in tags.split(",") if t.strip()]
+    hashtags = [t if t.startswith("#") else f"#{t}" for t in hashtags]
+    if caption or not title:
+        console.print("[dim]✨ Generating caption with AI…[/dim]")
+        try:
+            sug = pipeline.suggest_caption(src, cfg)
+            title = title or sug["title"]
+            desc = desc if desc is not None else sug["description"]
+            hashtags = hashtags or sug["hashtags"]
+            console.print(f"[green]✓[/green] Title: [bold]{title}[/bold]")
+        except RuntimeError as e:
+            console.print(f"[yellow]⚠ {e} — continuing without AI caption.[/yellow]")
+    title = title or src.stem.replace("-", " ").replace("_", " ").title()
+    desc = desc or ""
+
+    if at:
+        run_at = sched_mod.parse_when(at, cfg.get("timezone"))
+        staged = pipeline.stage_upload(src, cfg)
+        job_id = sched_mod.enqueue(run_at, "publish_video", {
+            "video": str(staged), "title": title, "description": desc,
+            "hashtags": hashtags, "platforms": plats, "dry_run": dry_run})
+        console.print(f"[green]✓[/green] Queued [bold]{title}[/bold] → "
+                      f"{', '.join(plats)} at {run_at:%A %Y-%m-%d %H:%M %Z} "
+                      f"(job #{job_id}). Run [bold]shortsmash worker[/bold] "
+                      f"to process the queue.")
+    else:
+        pipeline.publish_video(src, title, desc, hashtags, plats, cfg,
+                               dry_run=dry_run)
+
+
+@app.command()
 def schedule(topic: str,
              at: str = typer.Option(..., help='When, e.g. "Friday 6pm"'),
              duration: int = typer.Option(30),
@@ -116,9 +179,9 @@ def schedule(topic: str,
     is queued for the time you name (timezone-aware)."""
     cfg = Config()
     workdir = pipeline.create_project(topic, duration, cfg)
-    run_at = schedule.parse_when(at, cfg.get("timezone"))
+    run_at = sched_mod.parse_when(at, cfg.get("timezone"))
     plats = [p.strip() for p in platforms.split(",")]
-    job_id = schedule.enqueue(run_at, "publish",
+    job_id = sched_mod.enqueue(run_at, "publish",
                               {"slug": workdir.name, "platforms": plats})
     console.print(f"[green]✓[/green] Queued publish of [bold]{workdir.name}[/bold] "
                   f"→ {', '.join(plats)} at {run_at:%A %Y-%m-%d %H:%M %Z} "
@@ -128,7 +191,7 @@ def schedule(topic: str,
 @app.command()
 def queue(state: Optional[str] = typer.Option(None, help="queued|done|failed")):
     """Show the publish queue."""
-    jobs = schedule.list_jobs(state)
+    jobs = sched_mod.list_jobs(state)
     table = Table("id", "run at", "kind", "state", "tries", "detail")
     for j in jobs:
         table.add_row(str(j["id"]), j["run_at"][:16], j["kind"], j["state"],
@@ -139,7 +202,7 @@ def queue(state: Optional[str] = typer.Option(None, help="queued|done|failed")):
 @app.command()
 def cancel(job_id: int):
     """Cancel a queued job."""
-    if schedule.cancel(job_id):
+    if sched_mod.cancel(job_id):
         console.print(f"[green]✓[/green] Job {job_id} cancelled.")
     else:
         console.print(f"[yellow]![/yellow] Job {job_id} not found or already ran.")
@@ -149,7 +212,7 @@ def cancel(job_id: int):
 def worker(once: bool = typer.Option(False, help="Process due jobs and exit")):
     """Run the publish queue (polls every 30s)."""
     console.print("Worker running — Ctrl+C to stop." if not once else "Processing due jobs…")
-    schedule.run_worker(once=once)
+    sched_mod.run_worker(once=once)
 
 
 @app.command(name="engage")
@@ -210,7 +273,7 @@ def agent_cmd(request: str = typer.Argument(..., help='e.g. "make a 30s reel abo
             if job.schedule_at:
                 from datetime import datetime
                 run_at = datetime.fromisoformat(job.schedule_at)
-                jid = schedule.enqueue(run_at, "publish",
+                jid = sched_mod.enqueue(run_at, "publish",
                                        {"slug": workdir.name, "platforms": job.platforms})
                 console.print(f"[green]✓[/green] Publish queued (job #{jid}) for {run_at}.")
             else:

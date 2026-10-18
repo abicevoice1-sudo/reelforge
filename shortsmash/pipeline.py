@@ -247,13 +247,201 @@ def publish_project(slug: str, platforms: list[str], cfg: Config | None = None,
     if not final.exists():
         raise FileNotFoundError(f"No rendered video in {workdir} — run create first.")
     plan = load_plan(slug)
-    results = {}
+    results = publish_video(final, plan.title or slug, plan.description or "",
+                            plan.hashtags or [], platforms, cfg,
+                            dry_run=dry_run, **kwargs)
+    (workdir / "publishes.json").write_text(json.dumps(results, indent=2))
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Manual video posts — upload your own footage, post now or schedule it.
+# ---------------------------------------------------------------------------
+
+# Conservative per-platform limits for pre-flight warnings (not hard blocks).
+_PLATFORM_LIMITS = {
+    "youtube":   {"max_seconds": 180, "vertical": True,  "label": "YouTube Shorts"},
+    "tiktok":    {"max_seconds": 600, "vertical": True,  "label": "TikTok"},
+    "instagram": {"max_seconds": 180, "vertical": True,  "label": "Instagram Reels"},
+    "facebook":  {"max_seconds": 540, "vertical": True,  "label": "Facebook Reels"},
+    "x":         {"max_seconds": 140, "vertical": False, "label": "X"},
+    "threads":   {"max_seconds": 300, "vertical": True,  "label": "Threads"},
+    "bluesky":   {"max_seconds": 180, "vertical": True,  "label": "Bluesky"},
+    "linkedin":  {"max_seconds": 600, "vertical": False, "label": "LinkedIn"},
+    "pinterest": {"max_seconds": 300, "vertical": True,  "label": "Pinterest"},
+    "snapchat":  {"max_seconds": 180, "vertical": True,  "label": "Snapchat"},
+}
+
+
+def probe_video(path: Path) -> dict:
+    """ffprobe a video file. Raises on unreadable/missing files."""
+    import subprocess
+
+    p = Path(path)
+    if not p.exists():
+        raise FileNotFoundError(f"Video not found: {p}")
+    if p.suffix.lower() not in {".mp4", ".mov", ".webm", ".mkv", ".m4v"}:
+        raise ValueError(f"Unsupported video format {p.suffix} — use MP4/MOV/WebM.")
+    proc = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "v:0",
+         "-show_entries", "stream=width,height,avg_frame_rate,codec_name",
+         "-show_entries", "format=duration,size",
+         "-of", "json", str(p)],
+        capture_output=True, text=True, check=True,
+    )
+    info = json.loads(proc.stdout)
+    if not info.get("streams"):
+        raise ValueError(f"No video stream in {p} — is this a video file?")
+    s = info["streams"][0]
+    num, den = (s.get("avg_frame_rate", "30/1").split("/") + ["1"])[:2]
+    fps = float(num) / float(den or 1)
+    return {
+        "width": int(s["width"]),
+        "height": int(s["height"]),
+        "fps": round(fps, 2),
+        "codec": s.get("codec_name", "?"),
+        "duration": float(info["format"].get("duration", 0)),
+        "size_mb": round(float(info["format"].get("size", 0)) / 1e6, 1),
+        "vertical": int(s["height"]) >= int(s["width"]),
+    }
+
+
+def validate_video(path: Path, platforms: list[str]) -> dict:
+    """Pre-flight check: probe + per-platform warnings. Never raises for
+    warnings — only for unreadable files."""
+    meta = probe_video(path)
+    warnings: list[str] = []
+    mins, secs = divmod(int(meta["duration"]), 60)
+    dur_str = f"{mins}:{secs:02d}"
+    for plat in platforms:
+        lim = _PLATFORM_LIMITS.get(plat)
+        if not lim:
+            continue
+        if meta["duration"] > lim["max_seconds"]:
+            lmin = lim["max_seconds"] // 60
+            warnings.append(
+                f"{lim['label']}: video is {dur_str}, over the ~{lmin}m "
+                f"limit — it may be rejected or cut.")
+        if lim["vertical"] and not meta["vertical"]:
+            warnings.append(
+                f"{lim['label']}: video is landscape — vertical performs "
+                f"far better on this platform.")
+    return {"ok": True, "duration_str": dur_str, **meta, "warnings": warnings}
+
+
+def stage_upload(src: Path, cfg: Config | None = None) -> Path:
+    """Copy a user video into ~/.shortsmash/uploads/ with a timestamped name.
+    Returns the staged path (safe for the scheduler to reference later)."""
+    from .config import UPLOADS_DIR, ensure_home
+
+    ensure_home()
+    src = Path(src)
+    probe_video(src)  # fail fast on bad files
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    clean = re.sub(r"[^a-z0-9]+", "-", src.stem.lower()).strip("-")[:40] or "video"
+    dest = UPLOADS_DIR / f"{stamp}-{clean}{src.suffix.lower()}"
+    import shutil
+
+    shutil.copy2(src, dest)
+    return dest
+
+
+def suggest_caption(video: Path, cfg: Config | None = None) -> dict:
+    """AI-generate title/description/hashtags from video frames.
+
+    Extracts 3 frames, asks Gemini vision to describe them, returns
+    {"title", "description", "hashtags"}. Needs the Gemini connector;
+    raises RuntimeError with a clear message when unavailable.
+    """
+    import base64
+    import subprocess
+    import sys
+    import tempfile
+    from pathlib import Path as _Path
+
+    cfg = cfg or Config()
+    helper = _Path.home() / "workspace/custom-connectors/custom.gemini/bin/gemini.py"
+    if not helper.exists():
+        raise RuntimeError(
+            "Caption assist needs the Gemini connector "
+            "(~/workspace/custom-connectors/custom.gemini) — not set up.")
+    meta = probe_video(video)
+    descs: list[str] = []
+    with tempfile.TemporaryDirectory() as td:
+        for i, frac in enumerate((0.15, 0.5, 0.85)):
+            t = max(0.5, meta["duration"] * frac)
+            out = _Path(td) / f"f{i}.jpg"
+            subprocess.run(
+                ["ffmpeg", "-y", "-v", "error", "-ss", str(round(t, 1)),
+                 "-i", str(video), "-frames:v", "1", "-q:v", "4", str(out)],
+                check=True)
+            frame_b64 = base64.b64encode(out.read_bytes()).decode()
+            proc = subprocess.run(
+                [sys.executable, str(helper), "generate"],
+                input=json.dumps({
+                    "user": "Describe this video frame in one sentence: "
+                            "what is happening, objects, setting.",
+                    "image_b64": frame_b64,
+                    "model": cfg.get("gemini_model") or "gemini-3.8-flash",
+                    "temperature": 0.3,
+                }).encode(),
+                capture_output=True, timeout=90)
+            data = json.loads(proc.stdout.decode() or "{}")
+            if data.get("ok", True) and data.get("content"):
+                descs.append(data["content"].strip())
+    if not descs:
+        raise RuntimeError("Gemini vision returned nothing — try again later.")
+    from . import llm as llm_mod
+
+    prompt = (
+        "You are a viral short-form video marketer. A short video shows:\n- "
+        + "\n- ".join(descs)
+        + "\nReply with EXACTLY three lines:\n"
+        "TITLE: <punchy title, max 80 chars, no hashtags>\n"
+        "DESC: <2-sentence description with a hook>\n"
+        "TAGS: <8-12 hashtags, comma-separated, no spaces inside tags>")
+    try:
+        text = llm_mod.chat_text(
+            "You write viral video titles.", prompt, cfg)
+    except Exception as e:  # noqa: BLE001
+        raise RuntimeError(f"Caption text generation failed: {e}")
+    title, desc, tags = "", "", []
+    for line in text.splitlines():
+        line = line.strip()
+        if line.upper().startswith("TITLE:"):
+            title = line[6:].strip()[:100]
+        elif line.upper().startswith("DESC:"):
+            desc = line[5:].strip()[:500]
+        elif line.upper().startswith("TAGS:"):
+            tags = [t.strip() for t in line[5:].replace("#", "").split(",")
+                    if t.strip()][:12]
+            tags = ["#" + t.replace(" ", "") for t in tags]
+    if not title:
+        raise RuntimeError("The AI returned an unusable caption — try again.")
+    return {"title": title, "description": desc, "hashtags": tags}
+
+
+def publish_video(video: Path, title: str, description: str,
+                  hashtags: list[str], platforms: list[str],
+                  cfg: Config | None = None, dry_run: bool = False,
+                  **kwargs) -> dict[str, dict]:
+    """Publish ANY video file (not just a pipeline project) to platforms."""
+    from .publish import ADAPTERS
+
+    cfg = cfg or Config()
+    video = Path(video)
+    probe_video(video)  # fail fast
+    bad = [p for p in platforms if p not in ADAPTERS]
+    if bad:
+        raise ValueError(f"Unknown platforms: {bad}. Choose from {ADAPTERS}.")
+    results: dict[str, dict] = {}
     for platform in platforms:
         console.print(f"Publishing to {platform}…")
         results[platform] = publish_adapter(
-            platform, final, plan.title, plan.description, plan.hashtags,
+            platform, video, title, description, hashtags,
             cfg, dry_run=dry_run, **kwargs)
         console.print(f"[green]✓ {platform}:[/green] "
                       f"{results[platform].get('url', results[platform])}")
-    (workdir / "publishes.json").write_text(json.dumps(results, indent=2))
     return results
+
+

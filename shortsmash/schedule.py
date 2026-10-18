@@ -62,6 +62,24 @@ def parse_when(text: str, tz: str) -> datetime:
                  "day": timedelta(days=n)}[unit]
         return now + delta
 
+    # "tomorrow" / "today" + optional time — dateutil can't do these.
+    m = re.match(r"(tomorrow|today)(?:\s+(.+))?$", lowered)
+    if m:
+        day, rest = m.group(1), (m.group(2) or "9am").strip()
+        base = now + (timedelta(days=1) if day == "tomorrow" else timedelta(0))
+        try:
+            t = dateparser.parse(rest, default=base.replace(
+                hour=9, minute=0, second=0, microsecond=0))
+        except Exception:  # noqa: BLE001
+            t = None
+        if t is None:
+            raise ValueError(f"Could not understand time: {text!r}. "
+                             'Try e.g. "Friday 6pm", "tomorrow 9am", "in 2 hours".')
+        dt = base.replace(hour=t.hour, minute=t.minute, second=0, microsecond=0)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=zone)
+        return dt
+
     dt = dateparser.parse(text, default=now.replace(hour=9, minute=0,
                                                     second=0, microsecond=0))
     if dt is None:
@@ -170,6 +188,16 @@ def run_worker(poll_seconds: int = 30, once: bool = False,
                     pipeline.publish_project(payload["slug"],
                                              payload["platforms"], cfg,
                                              dry_run=payload.get("dry_run", False))
+                elif kind == "publish_video":
+                    # Manual upload: publish any staged video file.
+                    from pathlib import Path as _Path
+
+                    pipeline.publish_video(
+                        _Path(payload["video"]), payload.get("title", "Untitled"),
+                        payload.get("description", ""),
+                        payload.get("hashtags", []),
+                        payload["platforms"], cfg,
+                        dry_run=payload.get("dry_run", False))
                 elif kind == "auto_generate":
                     _run_auto_generate(payload, cfg)
                 else:

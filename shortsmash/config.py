@@ -18,6 +18,7 @@ load_dotenv()
 HOME = Path.home() / ".shortsmash"
 CONFIG_FILE = HOME / "config.yaml"
 PROJECTS_DIR = HOME / "projects"
+UPLOADS_DIR = HOME / "uploads"
 QUEUE_DB = HOME / "queue.db"
 
 DEFAULTS: dict[str, Any] = {
@@ -55,6 +56,7 @@ DEFAULTS: dict[str, Any] = {
 def ensure_home() -> Path:
     HOME.mkdir(parents=True, exist_ok=True)
     PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
+    UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
     return HOME
 
 

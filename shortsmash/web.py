@@ -7,12 +7,13 @@ publish, stats). Generation runs in background threads; the UI polls.
 """
 from __future__ import annotations
 
+import shutil
 import threading
 import time
 import uuid
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 
@@ -42,6 +43,16 @@ class PublishRequest(BaseModel):
     slug: str
     platforms: list[str]
     dry_run: bool = True
+
+
+class PostVideoRequest(BaseModel):
+    upload_id: str
+    title: str = ""
+    description: str = ""
+    hashtags: list[str] = []
+    platforms: list[str]
+    dry_run: bool = True
+    at: str | None = None  # natural language, e.g. "Friday 6pm" — schedules
 
 
 def _run_generation(job_id: str, topic: str, duration: int, language: str = "en",
@@ -443,6 +454,77 @@ def publish(req: PublishRequest):
     return results
 
 
+@app.post("/api/upload")
+async def upload_video(file: UploadFile = File(...)):
+    """Stage a user video for manual posting. Returns validation info."""
+    from .config import UPLOADS_DIR, ensure_home
+    from .pipeline import stage_upload, validate_video
+
+    ensure_home()
+    suffix = Path(file.filename or "video.mp4").suffix.lower()
+    if suffix not in {".mp4", ".mov", ".webm", ".mkv", ".m4v"}:
+        raise HTTPException(400, f"Unsupported format {suffix} — use MP4/MOV/WebM.")
+    tmp = UPLOADS_DIR / f"incoming-{uuid.uuid4().hex[:8]}{suffix}"
+    with open(tmp, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+    try:
+        staged = stage_upload(tmp, Config())
+    except (FileNotFoundError, ValueError) as e:
+        tmp.unlink(missing_ok=True)
+        raise HTTPException(400, str(e))
+    tmp.unlink(missing_ok=True)
+    info = validate_video(staged, [])
+    return {"upload_id": staged.name, **info}
+
+
+@app.post("/api/suggest-caption")
+def suggest_caption_api(req: dict):
+    """AI-generate title/description/hashtags for an uploaded video."""
+    from .config import UPLOADS_DIR
+
+    video = UPLOADS_DIR / req.get("upload_id", "")
+    if not video.exists():
+        raise HTTPException(404, "upload not found — upload the video first")
+    try:
+        return pipeline.suggest_caption(video, Config())
+    except RuntimeError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.post("/api/post-video")
+def post_video(req: PostVideoRequest):
+    """Post an uploaded video now, or schedule it with natural language."""
+    from . import schedule as sched_mod
+    from .config import UPLOADS_DIR
+
+    video = UPLOADS_DIR / req.upload_id
+    if not video.exists():
+        raise HTTPException(404, "upload not found — upload the video first")
+    hashtags = [t if t.startswith("#") else f"#{t}"
+                for t in req.hashtags if t.strip()]
+    title = req.title.strip() or video.stem.replace("-", " ").title()
+    if req.at:
+        run_at = sched_mod.parse_when(req.at, Config().get("timezone"))
+        job_id = sched_mod.enqueue(run_at, "publish_video", {
+            "video": str(video), "title": title,
+            "description": req.description, "hashtags": hashtags,
+            "platforms": req.platforms, "dry_run": req.dry_run})
+        return {"scheduled": True, "job_id": job_id,
+                "run_at": run_at.isoformat()}
+    results = []
+    for p in req.platforms:
+        if p not in ADAPTERS:
+            results.append({"platform": p, "error": "unknown platform"})
+            continue
+        try:
+            r = pipeline.publish_video(video, title, req.description,
+                                       hashtags, [p], dry_run=req.dry_run)
+            results.append(r[p])
+        except Exception as e:  # noqa: BLE001
+            results.append({"platform": p, "error": str(e)})
+    return {"scheduled": False, "results": results}
+
+
 @app.get("/api/platforms")
 def platforms():
     return platform_status()
@@ -652,6 +734,30 @@ h3 .sub{font-weight:500;font-size:13px;color:var(--dim);margin-left:10px}
    <button class="go" id="pubbtn" onclick="doPublish()">Publish to selected</button>
    <span class="log" id="pubcount"></span></div>
   <div id="pubresults" style="margin-top:14px"></div>
+ </div>
+ <div class="panel"><h3>📤 Post your own video</h3>
+  <p class="log">Upload any video — ShortSmash validates it, warns about platform
+  limits, can AI-write your title + hashtags, and posts or schedules it.</p>
+  <div class="row"><div><label>Video file (MP4/MOV/WebM)</label>
+   <input type="file" id="upfile" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm,.mkv,.m4v"></div>
+   <div><label>&nbsp;</label><button class="go" onclick="doUpload()">Upload & validate</button></div></div>
+  <div id="upinfo" class="log" style="margin-top:10px"></div>
+  <div id="upform" style="display:none;margin-top:14px">
+   <div class="row"><div><label>Title</label><input id="uptitle" type="text" style="width:100%"></div>
+    <div style="max-width:200px"><label>&nbsp;</label>
+     <button onclick="doCaption()">✨ AI caption</button></div></div>
+   <div class="row" style="margin-top:10px"><div><label>Description</label>
+    <input id="updesc" type="text" style="width:100%"></div></div>
+   <div class="row" style="margin-top:10px"><div><label>Hashtags (comma-separated)</label>
+    <input id="uptags" type="text" style="width:100%" placeholder="travel, viral"></div>
+    <div style="max-width:260px"><label>Schedule (optional)</label>
+     <input id="upat" type="text" style="width:100%" placeholder='e.g. "Friday 6pm"'></div></div>
+   <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <button class="go" id="uppost" onclick="doPostVideo(false)">Post to selected</button>
+    <button id="upsched" onclick="doPostVideo(true)">📅 Schedule</button>
+    <span class="log">Uses the platform checkboxes above.</span></div>
+   <div id="upresults" style="margin-top:14px"></div>
+  </div>
  </div>
  <div class="panel"><h3>🔑 Platform setup</h3>
   <p class="log">One-time setup per platform. Keys go in your environment or
@@ -887,6 +993,58 @@ async function doPublish(){
   const tag=x.dry_run?'🧪 dry run':'✅ posted';
   return `<div class="res ok">${tag} <b>${x.platform}</b>${url}</div>`;}).join('');
  btn.disabled=false;}
+let _uploadId=null;
+async function doUpload(){
+ const f=document.getElementById('upfile').files[0];
+ if(!f){alert('Pick a video file first.');return;}
+ const box=document.getElementById('upinfo');
+ box.innerHTML='Uploading & validating…';
+ const fd=new FormData();fd.append('file',f);
+ const r=await fetch('/api/upload',{method:'POST',body:fd});
+ if(!r.ok){box.innerHTML='❌ '+(await r.text());return;}
+ const info=await r.json();
+ _uploadId=info.upload_id;
+ const warns=(info.warnings||[]).map(w=>`<div>⚠️ ${w}</div>`).join('');
+ box.innerHTML=`✅ <b>${info.width}x${info.height}</b> ${info.fps}fps, ${info.duration_str}, ${info.size_mb}MB ${warns}`;
+ document.getElementById('upform').style.display='block';
+ const t=document.getElementById('uptitle');
+ if(!t.value)t.value=f.name.replace(/[.][^.]+$/,'').replace(/[-_]+/g,' ');}
+async function doCaption(){
+ if(!_uploadId)return;
+ const box=document.getElementById('upresults');
+ box.innerHTML='<p class="log">✨ AI is watching your video…</p>';
+ const r=await fetch('/api/suggest-caption',{method:'POST',
+  headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({upload_id:_uploadId})});
+ if(!r.ok){box.innerHTML='❌ '+(await r.text());return;}
+ const c=await r.json();
+ document.getElementById('uptitle').value=c.title||'';
+ document.getElementById('updesc').value=c.description||'';
+ document.getElementById('uptags').value=(c.hashtags||[]).join(', ');
+ box.innerHTML='<p class="log">✅ Caption filled in — edit anything you like.</p>';}
+async function doPostVideo(scheduleIt){
+ if(!_uploadId)return;
+ const platforms=selPlats();if(!platforms.length){alert('Select at least one platform above.');return;}
+ const live=document.getElementById('pubmode').value==='live';
+ const at=document.getElementById('upat').value.trim();
+ if(scheduleIt&&!at){alert('Type when to post, e.g. "Friday 6pm".');return;}
+ if(!scheduleIt&&live&&!confirm(`Post your video to ${platforms.join(', ')} FOR REAL?`))return;
+ const box=document.getElementById('upresults');
+ box.innerHTML='<p class="log">'+(scheduleIt?'Scheduling…':'Publishing…')+'</p>';
+ const r=await fetch('/api/post-video',{method:'POST',
+  headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({upload_id:_uploadId,
+   title:document.getElementById('uptitle').value,
+   description:document.getElementById('updesc').value,
+   hashtags:document.getElementById('uptags').value.split(',').map(s=>s.trim()).filter(Boolean),
+   platforms,dry_run:!live,at:scheduleIt?at:null})});
+ const res=await r.json();
+ if(res.scheduled){box.innerHTML=`✅ <b>Scheduled</b> for ${res.run_at} (job #${res.job_id}). Run <b>shortsmash worker</b> or leave the Studio running.`;return;}
+ box.innerHTML=(res.results||[]).map(x=>{
+  if(x.error)return `<div class="res err">❌ <b>${x.platform}</b> — ${x.error}</div>`;
+  const url=x.url?` — <a href="${x.url}" target="_blank">view post ↗</a>`:'';
+  const tag=x.dry_run?'🧪 dry run':'✅ posted';
+  return `<div class="res ok">${tag} <b>${x.platform}</b>${url}</div>`;}).join('');}
 async function loadStats(){
  const s=await (await fetch('/api/stats')).json();
  document.getElementById('statlist').innerHTML=
