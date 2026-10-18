@@ -3,6 +3,10 @@
 Providers (`visual_provider` in config, default "stock"):
   stock  — free Pixabay footage, verified by the two-stage vision gate
            (local CLIP + Gemini). The default; costs nothing.
+  agnes  — free AI-generated video via Agnes AI (text-to-video, no GPU).
+           Needs a free API key from https://platform.agnes-ai.com saved
+           in the Secure Vault (provider "agnes"). Each scene's cinematic
+           shot list becomes a real AI clip.
   custom — your own generator: set `visual_command` to a shell template
            that turns a prompt into an mp4, e.g. a ComfyUI workflow,
            a Replicate call, or MiniMax/Seedance via their APIs.
@@ -28,6 +32,9 @@ def fetch(query: str, out: Path, cfg: Config, seed: int = 0,
     provider = cfg.get("visual_provider", "stock")
     if provider == "custom":
         return _custom_generate(query, out, cfg, duration)
+    if provider == "agnes":
+        from . import agnes
+        return agnes.generate(query, out, cfg, duration=duration)
     from . import stock
     return stock.fetch_stock(query, out, cfg, seed=seed, context=context)
 
