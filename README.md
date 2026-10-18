@@ -1,5 +1,7 @@
 # ShortSmash ⚒️
 
+![ShortSmash — Prompt in. Viral short out.](assets/social-preview.png)
+
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](tests/)
