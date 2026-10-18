@@ -85,7 +85,7 @@ else
   warn "Skipping CLIP vision model (needs torch). Footage checks will use Gemini vision when configured."
 fi
 
-say "Downloading Piper neural voices (English + Urdu + Hindi, offline, one time)"
+say "Downloading Piper neural voices (English + Urdu + Hindi + Chinese, offline, one time)"
 mkdir -p voices
 dl_voice() { # $1 = filename, $2 = hf path
   if [ ! -f "voices/$1" ]; then
@@ -103,7 +103,9 @@ dl_voice ur_PK-aegis_female-medium.onnx      "ur/ur_PK/aegis_female/medium/ur_PK
 dl_voice ur_PK-aegis_female-medium.onnx.json "ur/ur_PK/aegis_female/medium/ur_PK-aegis_female-medium.onnx.json"
 dl_voice hi_IN-priyamvada-medium.onnx        "hi/hi_IN/priyamvada/medium/hi_IN-priyamvada-medium.onnx"
 dl_voice hi_IN-priyamvada-medium.onnx.json   "hi/hi_IN/priyamvada/medium/hi_IN-priyamvada-medium.onnx.json"
-ok "voices ready (English + Urdu + Hindi)"
+dl_voice zh_CN-huayan-medium.onnx            "zh/zh_CN/huayan/medium/zh_CN-huayan-medium.onnx"
+dl_voice zh_CN-huayan-medium.onnx.json       "zh/zh_CN/huayan/medium/zh_CN-huayan-medium.onnx.json"
+ok "voices ready (English + Urdu + Hindi + Chinese)"
 
 say "Installing Urdu caption font (Noto Nastaliq Urdu)"
 if [ "$OS" = "windows" ]; then

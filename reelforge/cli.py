@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -320,6 +321,33 @@ def dub(slug: str, lang: str = typer.Option(..., help="ur|ur-roman|hi|hi-roman|a
 @app.command()
 def version():
     console.print(f"ReelForge {__version__}")
+
+
+@app.command()
+def update():
+    """Pull the latest ReelForge from GitHub and reinstall. Keeps your config."""
+    import subprocess
+    repo = Path(__file__).resolve().parent.parent
+    console.print("[bold]Updating ReelForge…[/bold]")
+    try:
+        subprocess.run(["git", "pull", "--ff-only"], cwd=repo, check=True,
+                       capture_output=True, text=True)
+        console.print("[green]✓[/green] Latest code pulled")
+    except subprocess.CalledProcessError as e:
+        err = (e.stderr or e.stdout or "").strip().split("\n")[-1]
+        console.print(f"[red]✗[/red] git pull failed: {err}")
+        console.print("  Are you inside the cloned repo?")
+        raise typer.Exit(1)
+    vpy = repo / (".venv/Scripts/python.exe" if os.name == "nt"
+                  else ".venv/bin/python")
+    if vpy.exists():
+        console.print("Reinstalling into your venv…")
+        subprocess.run([str(vpy), "-m", "pip", "-q", "install", "-e", "."],
+                       cwd=repo, check=True)
+        console.print("[green]✓[/green] Reinstalled")
+    else:
+        console.print("[yellow]![/yellow] No .venv found — run ./install.sh (or install.bat) once.")
+    console.print(f"[bold green]ReelForge is up to date.[/bold green]")
 
 
 if __name__ == "__main__":

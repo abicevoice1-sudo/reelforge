@@ -26,12 +26,14 @@ SAMPLE_VOICES = {
     "fr": ["fr-FR-DeniseNeural", "fr-CA-SylvieNeural"],
     "de": ["de-DE-KatjaNeural", "de-DE-ConradNeural"],
     "pt": ["pt-BR-FranciscaNeural", "pt-PT-RaquelNeural"],
+    "zh": ["zh-CN-XiaoxiaoNeural", "zh-CN-YunxiNeural"],
 }
 
 DUB_LANGUAGES = {"ur": "Urdu", "ur-roman": "Urdu (Roman)",
                  "hi": "Hindi", "hi-roman": "Hindi (Roman)",
                  "ar": "Arabic", "es": "Spanish",
-                 "fr": "French", "de": "German", "pt": "Portuguese"}
+                 "fr": "French", "de": "German", "pt": "Portuguese",
+                 "zh": "Chinese"}
 
 # Roman dubs: native-script voice, Latin-script captions. The base language
 # drives translation and voice; captions get transliterated.
@@ -44,6 +46,7 @@ PIPER_VOICES = {
     "en": "en_US-amy-medium.onnx",
     "ur": "ur_PK-aegis_female-medium.onnx",
     "hi": "hi_IN-priyamvada-medium.onnx",
+    "zh": "zh_CN-huayan-medium.onnx",
 }
 
 

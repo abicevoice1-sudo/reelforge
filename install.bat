@@ -99,7 +99,7 @@ if %SKIP_VISION% EQU 0 (
 
 :: ---------- voices ----------
 echo.
-echo  [*] Downloading voices (English + Urdu + Hindi, one time)...
+echo  [*] Downloading voices (English + Urdu + Hindi + Chinese, one time)...
 ".venv\Scripts\python" -c "
 import os, urllib.request
 os.makedirs('voices', exist_ok=True)
@@ -110,6 +110,8 @@ files = [
   ('ur_PK-aegis_female-medium.onnx.json', 'ur/ur_PK/aegis_female/medium/ur_PK-aegis_female-medium.onnx.json'),
   ('hi_IN-priyamvada-medium.onnx', 'hi/hi_IN/priyamvada/medium/hi_IN-priyamvada-medium.onnx'),
   ('hi_IN-priyamvada-medium.onnx.json', 'hi/hi_IN/priyamvada/medium/hi_IN-priyamvada-medium.onnx.json'),
+  ('zh_CN-huayan-medium.onnx', 'zh/zh_CN/huayan/medium/zh_CN-huayan-medium.onnx'),
+  ('zh_CN-huayan-medium.onnx.json', 'zh/zh_CN/huayan/medium/zh_CN-huayan-medium.onnx.json'),
 ]
 base = 'https://huggingface.co/rhasspy/piper-voices/resolve/main/'
 for name, path in files:
