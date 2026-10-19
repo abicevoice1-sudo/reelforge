@@ -38,7 +38,7 @@ shortsmash post myvideo.mp4 --at "Friday 6pm" --platforms youtube,tiktok
 
 | English (original) | Español | اردو | Roman Urdu | 中文 |
 |---|---|---|---|---|
-| [![▶ Play](demo/coffee-poster.jpg)](demo/coffee-v1.mp4) | [![▶ Play](demo/coffee-poster-es.jpg)](demo/coffee-v1-es.mp4) | [![▶ Play](demo/coffee-poster-ur.jpg)](demo/coffee-v1-ur.mp4) | [![▶ Play](demo/coffee-poster-ur-roman.jpg)](demo/coffee-v1-ur-roman.mp4) | [![▶ Play](demo/coffee-poster-zh.jpg)](demo/coffee-v1-zh.mp4) |
+| [![▶ Play](demo/coffee-poster.jpg)](https://github.com/hydope/shortsmash/raw/master/demo/coffee-v1.mp4) | [![▶ Play](demo/coffee-poster-es.jpg)](https://github.com/hydope/shortsmash/raw/master/demo/coffee-v1-es.mp4) | [![▶ Play](demo/coffee-poster-ur.jpg)](https://github.com/hydope/shortsmash/raw/master/demo/coffee-v1-ur.mp4) | [![▶ Play](demo/coffee-poster-ur-roman.jpg)](https://github.com/hydope/shortsmash/raw/master/demo/coffee-v1-ur-roman.mp4) | [![▶ Play](demo/coffee-poster-zh.jpg)](https://github.com/hydope/shortsmash/raw/master/demo/coffee-v1-zh.mp4) |
 
 The same video, re-voiced by `shortsmash dub` — native neural voices, same verified footage. The 中文版 is fully re-voiced in native Mandarin (Piper huayan voice, not translationese) with Hanzi karaoke captions. One project, every audience.
 
