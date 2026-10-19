@@ -1,13 +1,13 @@
 # ShortSmash ⚒️
 
-![ShortSmash — Prompt in. Viral short out.](assets/social-preview.png)
+![ShortSmash — Prompt in. Finished short out.](assets/social-preview.png)
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](pyproject.toml)
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](tests/)
 [![CI](https://github.com/hydope/shortsmash/actions/workflows/ci.yml/badge.svg)](https://github.com/hydope/shortsmash/actions)
 
-**Prompt in. Viral short out.**
+**Prompt in. Finished short out.**
 
 ShortSmash is an AI video studio that takes one sentence — or today's trends — and ships a finished, captioned 9:16 short, then publishes it to YouTube, TikTok, Instagram, X, Threads, Bluesky, LinkedIn, Pinterest, and Facebook (profiles + Pages) through their **official APIs**. Script, voiceover, *verified* stock footage, karaoke captions, music ducking, trend harvesting, batch production, scheduling and comment-reply drafts, all in one CLI. And an MCP server, so AI agents can drive the whole factory.
 
@@ -46,6 +46,8 @@ The same video, re-voiced by `shortsmash dub` — native neural voices, same ver
 
 Upload any video, get a pre-flight check (resolution, duration, per-platform limits), an AI-written title + hashtags, then post now or schedule it ("Friday 6pm") to 10 platforms. In the Studio's Publish tab, or one command: `shortsmash post myvideo.mp4 --caption`
 
+![Studio: upload → validate → post or schedule](demo/studio-publish-flow.gif)
+
 [![Post your own video — upload, validate, AI caption, post or schedule](demo/screenshots/publish-manual-post.png)](demo/screenshots/publish-manual-post.png)
 
 ### 🖥️ ShortSmash Studio
@@ -62,11 +64,9 @@ Upload any video, get a pre-flight check (resolution, duration, per-platform lim
 | Lyrics mode | Auto pilot |
 | ![Lyrics tab](demo/screenshots/lyrics.png) | ![Auto tab](demo/screenshots/auto.png) |
 
-*Earlier demo: [Hyderabadi biryani](demo/biryani-v3.mp4) — the one that taught the pipeline to see.*
-
 ## Why ShortSmash
 
-Most text-to-video tools assemble clips blindly — whatever the stock API returns first goes in. That's why automated shorts have the infamous "stock-footage look": a burger in a biryani video, a robin in a cooking tutorial.
+Most text-to-video tools assemble clips blindly — whatever the stock API returns first goes in. That's why automated shorts have the infamous "stock-footage look": a burger in a cooking tutorial, a parrot in a recipe video.
 
 ShortSmash is the first open-source pipeline with **eyes**:
 
@@ -183,7 +183,9 @@ Free keys: [Pixabay](https://pixabay.com/api/docs/) (footage) · [Google AI Stud
 
 ## Docs
 
-- `docs/setup-youtube.md`, `setup-tiktok.md`, `setup-instagram.md`, `setup-x.md` — per-platform OAuth
+Per-platform publishing setup (official APIs):
+- `docs/setup-youtube.md`, `setup-tiktok.md`, `setup-instagram.md`, `setup-x.md`
+- `docs/setup-threads.md`, `setup-bluesky.md`, `setup-linkedin.md`, `setup-pinterest.md`, `setup-facebook.md`, `setup-facebook_page.md`
 - `docs/trends.md` — trend sources and scoring
 - `docs/mcp.md` — MCP server setup for Claude Code / Cursor
 - `docs/visual-providers.md` — plugging in AI visual generation

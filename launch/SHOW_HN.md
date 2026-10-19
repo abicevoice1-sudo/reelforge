@@ -6,7 +6,7 @@
 
 **Body:**
 
-Hey HN. I built ShortSmash because every "AI shorts" tool I tried assembled clips blindly — whatever the stock API returned first went into the video. The result is the infamous stock-footage look: a burger in a biryani video, a robin in a cooking tutorial.
+Hey HN. I built ShortSmash because every "AI shorts" tool I tried assembled clips blindly — whatever the stock API returned first went into the video. The result is the infamous stock-footage look: a burger in a cooking tutorial, a parrot in a recipe video.
 
 ShortSmash is a prompt-to-published pipeline for vertical shorts:
 

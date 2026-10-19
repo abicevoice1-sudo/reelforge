@@ -10,7 +10,7 @@ After months of nights, I'm launching ShortSmash v0.3.0: https://github.com/hydo
 
 Type a topic → it writes the script, narrates it (50 languages, native neural voices), finds footage, adds karaoke captions, renders 1080×1920, and publishes to 10 platforms in one click.
 
-The thing I'm most proud of: a two-stage vision gate (local CLIP + Gemini) that verifies every clip before it ships. No more burger-in-the-biryani-video.
+The thing I'm most proud of: a two-stage vision gate (local CLIP + Gemini) that verifies every clip before it ships. No more burger-in-the-cooking-video.
 
 Also: proper Urdu Nastaliq RTL karaoke, Mandarin re-voicing, lyrics video mode, and an Auto tab that goes from trend to scheduled publish with API quota budgeting.
 

@@ -10,7 +10,7 @@ Script ✓ Neural voiceover in 50 languages ✓ Footage that's actually verified
 
 Meet ShortSmash 🔨 — free & open source.
 
-**2/** The problem with every AI shorts tool: they assemble clips BLINDLY. Whatever the stock API returns first goes in. Burger in the biryani video. Robin in the cooking tutorial.
+**2/** The problem with every AI shorts tool: they assemble clips BLINDLY. Whatever the stock API returns first goes in. Burger in the cooking tutorial. Parrot in the recipe video.
 
 ShortSmash runs every clip through a two-stage vision gate (local CLIP + Gemini) before it ships. Nothing unverified makes the cut.
 

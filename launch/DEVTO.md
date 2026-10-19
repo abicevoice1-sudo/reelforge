@@ -6,7 +6,7 @@
 
 ---
 
-Every AI shorts tool has the same dirty secret: they assemble clips blindly. The stock API returns *something* for "espresso," and that something goes into your video. I've seen burgers in biryani videos. Robins in cooking tutorials.
+Every AI shorts tool has the same dirty secret: they assemble clips blindly. The stock API returns *something* for "espresso," and that something goes into your video. I've seen burgers in cooking videos. Robins in cooking tutorials.
 
 So when I built ShortSmash (https://github.com/hydope/shortsmash), I made footage verification the core of the pipeline, not an afterthought.
 
