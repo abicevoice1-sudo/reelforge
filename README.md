@@ -20,6 +20,29 @@ shortsmash post myvideo.mp4 --caption     # post YOUR video: AI title + hashtags
 shortsmash post myvideo.mp4 --at "Friday 6pm" --platforms youtube,tiktok
 ```
 
+```bash
+git clone https://github.com/hydope/shortsmash && cd shortsmash
+./install.sh                          # Windows: .\install.ps1
+shortsmash "why you can't tickle yourself"   # prompt in, finished short out
+```
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart LR
+    P["Prompt / trend"] --> LLM["LLM: script + shot plan<br/>(NVIDIA · Gemini · Grok)"]
+    LLM --> TTS["Neural TTS<br/>(50 languages)"]
+    LLM --> VIS["Visuals<br/>(Pixabay · Agnes · Veo 3.1 · Kling)"]
+    VIS --> GATE["Vision gate<br/>(CLIP + Gemini)"]
+    GATE -->|reject| VIS
+    TTS --> REN["FFmpeg render<br/>1080×1920 · karaoke captions<br/>cinematic grade · music"]
+    GATE --> REN
+    REN --> DUB["Dub engine<br/>(50 languages)"]
+    REN --> PUB["10 publishers<br/>(official APIs)"]
+    DUB --> PUB
+    PUB --> SCHED["Scheduler<br/>(SQLite · 'Friday 6pm')"]
+```
+
 ## 🖥️ ShortSmash Studio (web UI)
 
 `shortsmash serve` launches a dark, fast studio in your browser — no build step:

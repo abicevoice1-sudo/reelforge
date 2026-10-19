@@ -1,35 +1,39 @@
-# X launch thread — ShortSmash v0.3.0
+# X launch thread — ShortSmash (ready to post)
 
-Post as a thread. Attach: assets/social-preview.png to post 1, demo/coffee-v1-zh.mp4 to post 4.
+Post as a thread. Attach demo/tickle-v1.mp4 (or the GIF) to Tweet 1 — the visual hook.
 
 ---
 
-**1/** I built the thing I wished existed: type one sentence, get a viral-ready short video.
+**Tweet 1 (visual hook):**
+Every "AI shorts" tool assembles clips BLINDLY. Stock API returns something, it goes in the video. Burger in the cooking tutorial.
 
-Script ✓ Neural voiceover in 50 languages ✓ Footage that's actually verified ✓ Karaoke captions ✓ Published to 10 platforms in one click ✓
+So I built ShortSmash: one prompt → finished short, with every clip verified by AI vision before it ships. Free, open source, MIT.
 
-Meet ShortSmash 🔨 — free & open source.
+[attach demo video]
 
-**2/** The problem with every AI shorts tool: they assemble clips BLINDLY. Whatever the stock API returns first goes in. Burger in the cooking tutorial. Parrot in the recipe video.
+**Tweet 2 (features):**
+Under the hood:
+→ LLM writes script + shot-by-shot edit plan
+→ Neural TTS, 50 languages, native voices
+→ CLIP + Gemini vision gate on every clip
+→ Karaoke captions, cinematic grade, ducked music
+→ Veo 3.1 / Kling / Agnes / Pixabay as visual providers
 
-ShortSmash runs every clip through a two-stage vision gate (local CLIP + Gemini) before it ships. Nothing unverified makes the cut.
+**Tweet 3 (distribution):**
+The part that took the longest: one-click publishing to 10 platforms through their OFFICIAL APIs.
 
-**3/** The dubbing is the part I'm proudest of. 50 languages with native neural voices — not translationese.
+YouTube Shorts, TikTok, Instagram, X, Threads, Bluesky, LinkedIn, Pinterest, Facebook. Schedule it with "Friday 6pm" in plain English.
 
-Urdu gets proper Nastaliq calligraphy with RTL karaoke. Mandarin gets a native voice + Hanzi captions. Roman Urdu/Hindi for the diaspora that reads Latin script.
+**Tweet 4 (why open source):**
+The SaaS clones charge per video for what is, under the hood, blind stock assembly with a markup.
 
-**4/** Watch the same video re-voiced in Mandarin — zero human editing, one command:
+ShortSmash is MIT. The vision gate, the 50-language dubbing engine, the publishing adapters — inspectable, forkable. I'd rather have 500 contributors than 500 subscribers.
 
-`shortsmash dub coffee-v1 --lang zh`
+**Tweet 5 (CTA):**
+Try it:
 
-[attach coffee-v1-zh.mp4]
+git clone https://github.com/hydope/shortsmash && cd shortsmash
+./install.sh
+shortsmash "why you can't tickle yourself"
 
-**5/** v0.3.0 adds the heavy artillery for visuals: Google Veo 3.1 and Kling AI join Agnes AI + Pixabay as providers. Free path stays default; paid models are bring-your-own-key.
-
-**6/** One command installs everything:
-
-`curl -fsSL https://raw.githubusercontent.com/hydope/shortsmash/main/install.sh | bash`
-
-Then `shortsmash serve` opens the Studio. MIT licensed. Star it if you make something cool with it 👇
-
-github.com/hydope/shortsmash
+⭐ if you build something with it: github.com/hydope/shortsmash

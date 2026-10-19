@@ -1,31 +1,65 @@
-# Reddit drafts — ShortSmash
+# Reddit drafts — ShortSmash (tailored per subreddit)
 
-## r/SideProject
+Post each from an established account with real history in that subreddit. Never post the same text twice. Space them out — one per day minimum.
 
-**Title:** I built an open-source pipeline that turns one sentence into a published short video (50-language dubbing included)
+---
 
-**Body:**
+## r/Python
 
-After months of nights, I'm launching ShortSmash v0.3.0: https://github.com/hydope/shortsmash
-
-Type a topic → it writes the script, narrates it (50 languages, native neural voices), finds footage, adds karaoke captions, renders 1080×1920, and publishes to 10 platforms in one click.
-
-The thing I'm most proud of: a two-stage vision gate (local CLIP + Gemini) that verifies every clip before it ships. No more burger-in-the-cooking-video.
-
-Also: proper Urdu Nastaliq RTL karaoke, Mandarin re-voicing, lyrics video mode, and an Auto tab that goes from trend to scheduled publish with API quota budgeting.
-
-Visual providers: Pixabay (free), Agnes AI (free tier), Veo 3.1 + Kling (paid, BYO key). MIT licensed, one-command install.
-
-The README has a demo made end-to-end by the tool, including the Chinese version. Roast it — I want the brutal feedback.
-
-## r/opensource
-
-**Title:** ShortSmash — MIT-licensed prompt-to-published short video pipeline (Veo 3.1 / Kling / 50-language dubbing)
+**Title:** I built a prompt-to-published video pipeline in Python — every stock clip is verified by CLIP + Gemini before it ships
 
 **Body:**
 
 https://github.com/hydope/shortsmash
 
-Full pipeline, all local-first where it matters: LLM script + edit plan → neural TTS (Edge/Piper/gTTS) → CLIP-verified stock or AI-generated footage → karaoke ASS captions → FFmpeg → 10 publishers → SQLite scheduler.
+The architecture, since this is r/Python:
 
-v0.3.0 adds Veo 3.1 and Kling AI providers, Grok as an LLM option, and a Mandarin demo. Everything's tested (52 tests, CI green). Contributions welcome — especially new publishers and TTS providers.
+- **LLM layer** (`shortsmash/llm.py`) — script + shot-by-shot edit plan as pydantic-validated JSON; providers: NVIDIA, Gemini, Grok, OpenAI-compatible, template fallback
+- **Async pipeline** — footage fetch, TTS, and caption timing run concurrently with asyncio; per-stage retries with backoff
+- **Vision gate** (`shortsmash/vision.py`) — every stock clip is scored by local CLIP ViT-B/32, then confirmed by Gemini vision. Both must pass. This kills the classic "burger in the cooking video" failure of every other tool in this space
+- **Captions** — per-word timed ASS subtitles, including proper Urdu Nastaliq with RTL-correct karaoke highlighting (the hardest text-rendering problem I've ever solved)
+- **Publishers** (`shortsmash/platforms/`) — 10 official API adapters (YouTube, TikTok, Instagram, X, Threads, Bluesky, LinkedIn, Pinterest, Facebook), each with its own OAuth flow and setup guide in docs/
+- **Scheduler** — SQLite-backed queue, natural-language times ("Friday 6pm"), background worker
+- **MCP server** — AI agents can drive the whole factory
+
+52 tests, CI green, MIT. The README demo videos were generated end-to-end by the tool itself. Would love code review — especially on the vision gate and the publisher adapters.
+
+---
+
+## r/SelfHosted
+
+**Title:** ShortSmash — self-hosted AI short video factory: prompt in, published short out, your keys, your machine
+
+**Body:**
+
+https://github.com/hydope/shortsmash
+
+If you're allergic to SaaS video tools that charge per render: this runs entirely on your hardware.
+
+- **Your keys, your control** — Pixabay (free), Agnes AI (free tier) for footage; Veo 3.1 / Kling are bring-your-own-key and optional. LLM via NVIDIA/Gemini/Grok or any OpenAI-compatible endpoint (points at your local Ollama/vLLM just fine)
+- **Local-first where it counts** — CLIP verification runs on your GPU/CPU, Piper TTS is fully offline, FFmpeg render is local, SQLite queue, no phone-home
+- **Docker** — compose file included; `shortsmash serve` also gives you a web Studio UI on localhost:8000
+- **Secrets** — everything lives in your own `.env`, never leaves the box
+- **10-platform publishing** from one box via official APIs, with a natural-language scheduler
+
+MIT licensed. The demo videos in the README were made by the tool running on a plain VM. Happy to help anyone self-hosting it — issues on GitHub get answered.
+
+---
+
+## r/OpenSource
+
+**Title:** ShortSmash — MIT-licensed prompt-to-published short video pipeline; looking for contributors
+
+**Body:**
+
+https://github.com/hydope/shortsmash
+
+I built this as MIT from day one because the SaaS versions of this idea charge per video for what is, under the hood, blind stock assembly with a markup. The interesting parts — the vision gate, the 50-language dubbing engine, the publishing adapters — deserve to be inspectable and forkable.
+
+Where contributors would help most:
+- **New publishers** — the adapter interface is small; Snapchat and more are on the roadmap
+- **TTS providers** — Edge/Piper/gTTS are in; more voices welcome
+- **Vision gate** — better local models, smarter rejection heuristics
+- **Docs/translations** — setup guides for the 10 platforms exist; more languages for the README
+
+Roadmap is in the README. PRs get reviewed fast, issues get answered, and there's a real test suite (52 tests) so you won't break things blind. If you've ever wanted to learn how the sausage gets made in AI video tooling, this is a good codebase to start.
