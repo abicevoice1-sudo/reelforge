@@ -44,6 +44,20 @@ shortsmash post myvideo.mp4 --at "Friday 6pm" --platforms youtube,tiktok
 
 *Español · اردو · Roman Urdu · 中文 — the Mandarin version uses a native voice (not translationese) with Hanzi karaoke captions. One project, every audience.*
 
+**More demos** — each made from a single prompt, click to play:
+
+**Why you can't tickle yourself** — 11s, 1080×1920
+
+[<img src="demo/tickle-v1-poster.jpg" width="270">](https://github.com/hydope/shortsmash/raw/master/demo/tickle-v1.mp4)
+
+**The deepest place on Earth** — 14s, 1080×1920
+
+[<img src="demo/trench-v1-poster.jpg" width="270">](https://github.com/hydope/shortsmash/raw/master/demo/trench-v1.mp4)
+
+**Why time flies faster as you get older** — 11s, 1080×1920
+
+[<img src="demo/time-v1-poster.jpg" width="270">](https://github.com/hydope/shortsmash/raw/master/demo/time-v1.mp4)
+
 ### 📤 Or skip the AI — post your own video
 
 Upload any video, get a pre-flight check (resolution, duration, per-platform limits), an AI-written title + hashtags, then post now or schedule it ("Friday 6pm") to 10 platforms. In the Studio's Publish tab, or one command: `shortsmash post myvideo.mp4 --caption`
