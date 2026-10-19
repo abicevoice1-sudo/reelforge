@@ -34,13 +34,15 @@ shortsmash post myvideo.mp4 --at "Friday 6pm" --platforms youtube,tiktok
 
 *Made end-to-end by ShortSmash — no hand-picked clips, no human editing. LLM script, neural voice, CLIP-verified stock footage, karaoke captions, ducked music bed.*
 
-**"How Goats Made You Addicted to Coffee"** — 49s, 1080×1920, made from one prompt. Click any poster to play:
+**"How Goats Made You Addicted to Coffee"** — 49s, 1080×1920, made from one prompt. Click to play:
 
-| English (original) | Español | اردو | Roman Urdu | 中文 |
-|---|---|---|---|---|
-| [![▶ Play](demo/coffee-poster.jpg)](https://github.com/hydope/shortsmash/raw/master/demo/coffee-v1.mp4) | [![▶ Play](demo/coffee-poster-es.jpg)](https://github.com/hydope/shortsmash/raw/master/demo/coffee-v1-es.mp4) | [![▶ Play](demo/coffee-poster-ur.jpg)](https://github.com/hydope/shortsmash/raw/master/demo/coffee-v1-ur.mp4) | [![▶ Play](demo/coffee-poster-ur-roman.jpg)](https://github.com/hydope/shortsmash/raw/master/demo/coffee-v1-ur-roman.mp4) | [![▶ Play](demo/coffee-poster-zh.jpg)](https://github.com/hydope/shortsmash/raw/master/demo/coffee-v1-zh.mp4) |
+[<img src="demo/coffee-poster.jpg" width="270">](https://github.com/hydope/shortsmash/raw/master/demo/coffee-v1.mp4)
 
-The same video, re-voiced by `shortsmash dub` — native neural voices, same verified footage. The 中文版 is fully re-voiced in native Mandarin (Piper huayan voice, not translationese) with Hanzi karaoke captions. One project, every audience.
+**Same video, re-voiced** — native neural voices, same verified footage:
+
+[<img src="demo/coffee-poster-es.jpg" width="150">](https://github.com/hydope/shortsmash/raw/master/demo/coffee-v1-es.mp4) [<img src="demo/coffee-poster-ur.jpg" width="150">](https://github.com/hydope/shortsmash/raw/master/demo/coffee-v1-ur.mp4) [<img src="demo/coffee-poster-ur-roman.jpg" width="150">](https://github.com/hydope/shortsmash/raw/master/demo/coffee-v1-ur-roman.mp4) [<img src="demo/coffee-poster-zh.jpg" width="150">](https://github.com/hydope/shortsmash/raw/master/demo/coffee-v1-zh.mp4)
+
+*Español · اردو · Roman Urdu · 中文 — the Mandarin version uses a native voice (not translationese) with Hanzi karaoke captions. One project, every audience.*
 
 ### 📤 Or skip the AI — post your own video
 
