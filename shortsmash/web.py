@@ -20,7 +20,7 @@ from pydantic import BaseModel
 from . import pipeline
 from . import trends as trends_mod
 from .config import PROJECTS_DIR, Config
-from .publish import ADAPTERS, platform_status, publish as publish_adapter
+from creator_publish.publish import ADAPTERS, platform_status, publish as publish_adapter
 
 app = FastAPI(title="ShortSmash Studio")
 
@@ -268,7 +268,7 @@ class AutoRequest(BaseModel):
 
 @app.get("/api/auto")
 def get_auto():
-    from shortsmash import schedule as sched
+    from creator_publish import schedule as sched
     cfg = _load_auto()
     cfg["queued"] = len(sched.list_jobs("queued"))
     return cfg
@@ -278,7 +278,7 @@ def get_auto():
 def set_auto(req: AutoRequest):
     import json as _json
     from datetime import datetime, timedelta
-    from shortsmash import schedule as sched
+    from creator_publish import schedule as sched
     cfg = {"enabled": req.enabled, "niche": req.niche,
            "per_day": max(1, min(5, req.per_day)),
            "platforms": req.platforms, "language": req.language,
@@ -494,7 +494,7 @@ def suggest_caption_api(req: dict):
 @app.post("/api/post-video")
 def post_video(req: PostVideoRequest):
     """Post an uploaded video now, or schedule it with natural language."""
-    from . import schedule as sched_mod
+    from creator_publish import schedule as sched_mod
     from .config import UPLOADS_DIR
 
     video = UPLOADS_DIR / req.upload_id

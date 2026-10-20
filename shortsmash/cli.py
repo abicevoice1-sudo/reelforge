@@ -11,9 +11,9 @@ from rich.console import Console
 from rich.table import Table
 
 from . import __version__, agent, engage, pipeline
-from . import schedule as sched_mod
+from creator_publish import schedule as sched_mod
 from .config import CONFIG_FILE, DEFAULTS, Config, ensure_home
-from .publish import ADAPTERS
+from creator_publish.publish import ADAPTERS
 
 app = typer.Typer(help="ShortSmash — prompt in, viral short out.",
                   no_args_is_help=True)

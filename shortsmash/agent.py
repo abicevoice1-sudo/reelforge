@@ -16,7 +16,7 @@ import re
 from . import llm as llm_mod
 from .config import Config
 from .schemas import AgentJob
-from .schedule import parse_when
+from creator_publish.schedule import parse_when
 
 AGENT_PROMPT = """Parse the user's request into JSON. Output ONLY JSON.
 

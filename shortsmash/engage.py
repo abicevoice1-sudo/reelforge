@@ -59,7 +59,7 @@ def draft_reply(comment: Comment, cfg: Config | None = None) -> str:
 
 def fetch_youtube_comments(cfg: Config, max_videos: int = 3,
                            per_video: int = 10) -> list[Comment]:
-    from .publish.youtube import _service
+    from creator_publish.publish.youtube import _service
     yt = _service(cfg)
     out: list[Comment] = []
     vids = yt.search().list(part="id,snippet", forMine=True, type="video",
@@ -97,7 +97,7 @@ def fetch_tiktok_comments(cfg: Config) -> list[Comment]:
 
 
 def fetch_instagram_comments(cfg: Config) -> list[Comment]:
-    from .publish.instagram import _call
+    from creator_publish.publish.instagram import _call
     ig_id = cfg.require("ig_user", "IG_USER_ID", "reading IG comments")
     media = _call(cfg, "GET", f"/{ig_id}/media",
                   params={"fields": "id,caption,timestamp", "limit": 5})
@@ -136,7 +136,7 @@ FETCHERS = {"youtube": fetch_youtube_comments, "tiktok": fetch_tiktok_comments,
 
 def post_reply(comment: Comment, text: str, cfg: Config) -> dict:
     if comment.platform == "youtube":
-        from .publish.youtube import _service
+        from creator_publish.publish.youtube import _service
         yt = _service(cfg)
         r = yt.comments().insert(part="snippet", body={
             "snippet": {"parentId": comment.id,
@@ -151,7 +151,7 @@ def post_reply(comment: Comment, text: str, cfg: Config) -> dict:
         r.raise_for_status()
         return r.json()
     if comment.platform == "instagram":
-        from .publish.instagram import _call
+        from creator_publish.publish.instagram import _call
         r = _call(cfg, "POST", f"/{comment.reply_to['media_id']}/replies",
                   data={"message": text})
         return r

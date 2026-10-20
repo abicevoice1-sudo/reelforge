@@ -36,7 +36,7 @@ def _youtube_id(url: str) -> str | None:
 
 def youtube_stats(video_ids: list[str], cfg: Config) -> dict[str, dict]:
     """Map video ID → {views, likes, comments, title} via YouTube Data API."""
-    from .publish.youtube import _service
+    from creator_publish.publish.youtube import _service
     svc = _service(cfg)
     out: dict[str, dict] = {}
     for i in range(0, len(video_ids), 50):

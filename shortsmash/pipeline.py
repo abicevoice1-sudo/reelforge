@@ -23,7 +23,7 @@ from . import captions as captions_mod
 from . import edit, music, script, stock, visual, voice
 from .captions import Word
 from .config import PROJECTS_DIR, Config, ensure_home
-from .publish import publish as publish_adapter
+from creator_publish.publish import publish as publish_adapter
 from .schemas import EditPlan
 
 console = Console()
@@ -426,7 +426,7 @@ def publish_video(video: Path, title: str, description: str,
                   cfg: Config | None = None, dry_run: bool = False,
                   **kwargs) -> dict[str, dict]:
     """Publish ANY video file (not just a pipeline project) to platforms."""
-    from .publish import ADAPTERS
+    from creator_publish.publish import ADAPTERS
 
     cfg = cfg or Config()
     video = Path(video)
