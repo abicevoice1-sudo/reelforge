@@ -10,3 +10,4 @@ models/
 voices/
 *.onnx
 *.onnx.json
+dist/

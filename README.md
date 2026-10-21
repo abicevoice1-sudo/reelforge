@@ -11,6 +11,8 @@
 
 ShortSmash is an AI video studio that takes one sentence — or today's trends — and ships a finished, captioned 9:16 short, then publishes it to YouTube, TikTok, Instagram, X, Threads, Bluesky, LinkedIn, Pinterest, and Facebook (profiles + Pages) through their **official APIs**. Script, voiceover, *verified* stock footage, karaoke captions, music ducking, trend harvesting, batch production, scheduling and comment-reply drafts, all in one CLI. And an MCP server, so AI agents can drive the whole factory.
 
+<!-- mcp-name: io.github.hydope/shortsmash -->
+
 ```bash
 shortsmash trends food                    # what's hot right now (free, no keys)
 shortsmash batch food --count 5           # turn the top 5 trends into 5 videos

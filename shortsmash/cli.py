@@ -360,6 +360,13 @@ def serve(host: str = typer.Option("127.0.0.1", help="Bind address"),
 
 
 @app.command()
+def mcp():
+    """Run the ShortSmash MCP server over stdio (for Claude Code, Cursor, …)."""
+    from .mcp_server import main as mcp_main
+    mcp_main()
+
+
+@app.command()
 def analytics():
     """Show real view/like/comment stats for published videos."""
     from . import analytics as amod

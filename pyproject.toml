@@ -1,6 +1,6 @@
 [project]
 name = "shortsmash"
-version = "0.2.0"
+version = "0.3.0"
 description = "Prompt in. Viral short out. AI video studio: script, voice, stock, edit, captions, and official-API publishing to YouTube, TikTok, Instagram and X."
 readme = "README.md"
 license = { text = "MIT" }
@@ -40,6 +40,7 @@ threads = ["httpx>=0.25"]
 
 [project.scripts]
 shortsmash = "shortsmash.cli:app"
+shortsmash-mcp = "shortsmash.mcp_server:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -47,6 +48,12 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["shortsmash"]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/demo/*.mp4",
+    "/launch/fb-posts/*.mp4",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
