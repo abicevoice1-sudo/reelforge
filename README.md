@@ -26,6 +26,14 @@ git clone https://github.com/hydope/shortsmash && cd shortsmash
 shortsmash "why you can't tickle yourself"   # prompt in, finished short out
 ```
 
+## 🏆 Featured in
+
+ShortSmash is listed in curated awesome lists (merged PRs):
+
+- [ToolkitlyAI/awesome-ai-tools](https://github.com/ToolkitlyAI/awesome-ai-tools/pull/212) — AI Video
+- [TensorBlock/awesome-mcp-servers](https://github.com/TensorBlock/awesome-mcp-servers/pull/4267) — MCP registry profile live on [tensorblock.co](https://tensorblock.co/mcp/servers/github-hydope-shortsmash-19af6b2a)
+- [sajadh76/awesome-AI-tools](https://github.com/sajadh76/awesome-AI-tools/pull/155) — Video Generation
+
 ## 🏗️ Architecture
 
 ```mermaid
