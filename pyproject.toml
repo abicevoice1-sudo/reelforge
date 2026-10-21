@@ -1,7 +1,7 @@
 [project]
 name = "shortsmash"
 version = "0.3.0"
-description = "Prompt in. Viral short out. AI video studio: script, voice, stock, edit, captions, and official-API publishing to YouTube, TikTok, Instagram and X."
+description = "Prompt in. Finished short out. AI video studio: script, voice, stock, edit, captions, and official-API publishing to YouTube, TikTok, Instagram and X."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "ShortSmash" }]
