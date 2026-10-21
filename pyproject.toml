@@ -21,6 +21,7 @@ dependencies = [
     "python-dotenv>=1.0",
     "pyyaml>=6.0",
     "python-dateutil>=2.8",
+    "creator-publish>=0.1.0",
 ]
 
 [project.optional-dependencies]
