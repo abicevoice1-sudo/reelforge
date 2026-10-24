@@ -35,6 +35,8 @@ ShortSmash is listed in curated awesome lists (merged PRs):
 - [ToolkitlyAI/awesome-ai-tools](https://github.com/ToolkitlyAI/awesome-ai-tools/pull/212) — AI Video
 - [TensorBlock/awesome-mcp-servers](https://github.com/TensorBlock/awesome-mcp-servers/pull/4267) — MCP registry profile live on [tensorblock.co](https://tensorblock.co/mcp/servers/github-hydope-shortsmash-19af6b2a)
 - [sajadh76/awesome-AI-tools](https://github.com/sajadh76/awesome-AI-tools/pull/155) — Video Generation
+- [mcpHQ/awesome-mcp-servers](https://github.com/mcpHQ/awesome-mcp-servers/pull/333) — MCP Servers
+- [Jenqyang/Awesome-AI-Agents](https://github.com/Jenqyang/Awesome-AI-Agents/pull/643) — AI Agents
 - [Official MCP Registry](https://registry.modelcontextprotocol.io/v0/servers?search=shortsmash) — `io.github.hydope/shortsmash`, installable via `pip install shortsmash`
 
 ## 🏗️ Architecture
